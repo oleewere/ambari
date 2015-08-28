@@ -437,6 +437,8 @@ public class ConfigurationTest {
     Assert.assertEquals(5, configuration.getConnectionPoolMinimumSize());
     Assert.assertEquals(30, configuration.getConnectionPoolAcquisitionRetryAttempts());
     Assert.assertEquals(1000, configuration.getConnectionPoolAcquisitionRetryDelay());
+    Assert.assertEquals(300, configuration.getConnectionPoolMaxStatements());
+    Assert.assertEquals(100, configuration.getConnectionPoolMaxStatementsPerConnection());
 
     ambariProperties.setProperty(Configuration.SERVER_JDBC_CONNECTION_POOL, ConnectionPoolType.C3P0.getName());
     ambariProperties.setProperty(Configuration.SERVER_JDBC_CONNECTION_POOL_MIN_SIZE, "1");
@@ -448,7 +450,8 @@ public class ConfigurationTest {
     ambariProperties.setProperty(Configuration.SERVER_JDBC_CONNECTION_POOL_IDLE_TEST_INTERVAL, "7");
     ambariProperties.setProperty(Configuration.SERVER_JDBC_CONNECTION_POOL_ACQUISITION_RETRY_ATTEMPTS, "8");
     ambariProperties.setProperty(Configuration.SERVER_JDBC_CONNECTION_POOL_ACQUISITION_RETRY_DELAY, "9");
-
+    ambariProperties.setProperty(Configuration.SERVER_JDBC_CONNECTION_POOL_MAX_STATEMENTS, "10");
+    ambariProperties.setProperty(Configuration.SERVER_JDBC_CONNECTION_POOL_MAX_STATEMENTS_PER_CONNECTION, "11");
 
     Assert.assertEquals(ConnectionPoolType.C3P0, configuration.getConnectionPoolType());
     Assert.assertEquals(3, configuration.getConnectionPoolAcquisitionSize());
@@ -460,6 +463,8 @@ public class ConfigurationTest {
     Assert.assertEquals(1, configuration.getConnectionPoolMinimumSize());
     Assert.assertEquals(8, configuration.getConnectionPoolAcquisitionRetryAttempts());
     Assert.assertEquals(9, configuration.getConnectionPoolAcquisitionRetryDelay());
+    Assert.assertEquals(10, configuration.getConnectionPoolMaxStatements());
+    Assert.assertEquals(11, configuration.getConnectionPoolMaxStatementsPerConnection());
   }
 
   @Test
@@ -481,6 +486,15 @@ public class ConfigurationTest {
 
     ambariProperties.setProperty(Configuration.SERVER_JDBC_URL_KEY, "jdbc:sqlserver://server");
     Assert.assertEquals( DatabaseType.SQL_SERVER, configuration.getDatabaseType() );
+  }
+
+  @Test
+  public void testDatabaseInternalCachingProperties() throws Exception {
+    final Properties ambariProperties = new Properties();
+    final Configuration configuration = new Configuration(ambariProperties);
+
+    Assert.assertEquals(300, configuration.getCacheStatementsSize());
+    Assert.assertEquals(true, configuration.isCacheEnabled());
   }
 
   @Test

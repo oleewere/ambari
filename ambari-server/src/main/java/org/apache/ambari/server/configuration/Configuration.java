@@ -172,6 +172,8 @@ public class Configuration {
   public static final String SERVER_JDBC_DRIVER_KEY = "server.jdbc.driver";
   public static final String SERVER_JDBC_URL_KEY = "server.jdbc.url";
   public static final String SERVER_JDBC_PROPERTIES_PREFIX = "server.jdbc.properties.";
+  public static final String SERVER_JDBC_CACHE_STATEMENT = "server.jdbc.cache-statement";
+  public static final String SERVER_JDBC_CACHE_SIZE = "server.jdbc.cache-size";
   public static final String ROLLING_UPGRADE_MIN_STACK_KEY = "rolling.upgrade.min.stack";
   public static final String ROLLING_UPGRADE_MAX_STACK_KEY = "rolling.upgrade.max.stack";
   public static final String ROLLING_UPGRADE_MIN_STACK_DEFAULT = "HDP-2.2";
@@ -187,7 +189,9 @@ public class Configuration {
   public static final String SERVER_JDBC_CONNECTION_POOL_IDLE_TEST_INTERVAL = "server.jdbc.connection-pool.idle-test-interval";
   public static final String SERVER_JDBC_CONNECTION_POOL_ACQUISITION_RETRY_ATTEMPTS = "server.jdbc.connection-pool.acquisition-retry-attempts";
   public static final String SERVER_JDBC_CONNECTION_POOL_ACQUISITION_RETRY_DELAY = "server.jdbc.connection-pool.acquisition-retry-delay";
-  
+  public static final String SERVER_JDBC_CONNECTION_POOL_MAX_STATEMENTS = "server.jdbc.connection-pool.max-statements";
+  public static final String SERVER_JDBC_CONNECTION_POOL_MAX_STATEMENTS_PER_CONNECTION = "server.jdbc.connection-pool.max-statements-per-connection";
+
   public static final String SERVER_JDBC_RCA_USER_NAME_KEY = "server.jdbc.rca.user.name";
   public static final String SERVER_JDBC_RCA_USER_PASSWD_KEY = "server.jdbc.rca.user.passwd";
   public static final String SERVER_JDBC_RCA_DRIVER_KEY = "server.jdbc.rca.driver";
@@ -326,6 +330,8 @@ public class Configuration {
   private static final String SERVER_JDBC_USER_PASSWD_DEFAULT = "bigdata";
   private static final String SERVER_JDBC_RCA_USER_NAME_DEFAULT = "mapred";
   private static final String SERVER_JDBC_RCA_USER_PASSWD_DEFAULT = "mapred";
+  private static final String SERVER_JDBC_CACHE_STATEMENT_DEFAULT = "true";
+  private static final String SERVER_JDBC_CACHE_SIZE_DEFAULT = "300";
   private static final String SRVR_TWO_WAY_SSL_DEFAULT = "false";
   private static final String SRVR_KSTR_DIR_DEFAULT = ".";
   private static final String API_CSRF_PREVENTION_DEFAULT = "true";
@@ -410,6 +416,8 @@ public class Configuration {
   private static final String DEFAULT_JDBC_POOL_IDLE_TEST_INTERVAL = "7200";
   private static final String DEFAULT_JDBC_POOL_ACQUISITION_RETRY_ATTEMPTS = "30";
   private static final String DEFAULT_JDBC_POOL_ACQUISITION_RETRY_DELAY = "1000";
+  private static final String DEFAULT_JDBC_POOL_MAX_STATEMENTS = "300";
+  private static final String DEFAULT_JDBC_POOL_MAX_STATEMENTS_PER_CONNECTION = "100";
 
   // Timeline Metrics Cache settings
   private static final String TIMELINE_METRICS_CACHE_DISABLE = "server.timeline.metrics.cache.disabled";
@@ -1804,6 +1812,38 @@ public class Configuration {
     return Integer.parseInt(properties.getProperty(
         SERVER_JDBC_CONNECTION_POOL_IDLE_TEST_INTERVAL,
         DEFAULT_JDBC_POOL_IDLE_TEST_INTERVAL));
+  }
+
+  /**
+   * Gets the maximum amount of prepared statements which kept cached. Set 0 value to disable caching.
+   * @return default of {@value #DEFAULT_JDBC_POOL_MAX_STATEMENTS}
+   */
+  public int getConnectionPoolMaxStatements() {
+    return Integer.parseInt(properties.getProperty(SERVER_JDBC_CONNECTION_POOL_MAX_STATEMENTS, DEFAULT_JDBC_POOL_MAX_STATEMENTS));
+  }
+
+  /**
+   * Gets the maximum amount of prepared statements which kept cached for each connection in the pool.
+   * @return default of {@value #DEFAULT_JDBC_POOL_MAX_STATEMENTS_PER_CONNECTION}
+   */
+  public int getConnectionPoolMaxStatementsPerConnection() {
+    return Integer.parseInt(properties.getProperty(SERVER_JDBC_CONNECTION_POOL_MAX_STATEMENTS_PER_CONNECTION, DEFAULT_JDBC_POOL_MAX_STATEMENTS_PER_CONNECTION));
+  }
+
+  /**
+   * Enable/disable internal statement caching.
+   * @return default of {@value #SERVER_JDBC_CACHE_STATEMENT_DEFAULT}
+   */
+  public boolean isCacheEnabled() {
+    return "true".equalsIgnoreCase(properties.getProperty(SERVER_JDBC_CACHE_STATEMENT, SERVER_JDBC_CACHE_STATEMENT_DEFAULT));
+  }
+
+  /**
+   * Gets the maximum amount of statements held in cache when using internal statement caching.
+   * @return default of {@value #SERVER_JDBC_CACHE_SIZE_DEFAULT}
+   */
+  public int getCacheStatementsSize() {
+    return Integer.parseInt(properties.getProperty(SERVER_JDBC_CACHE_SIZE, SERVER_JDBC_CACHE_SIZE_DEFAULT));
   }
 
   /**

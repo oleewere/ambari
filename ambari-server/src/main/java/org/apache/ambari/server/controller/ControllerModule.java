@@ -18,6 +18,8 @@
 
 package org.apache.ambari.server.controller;
 
+import static org.eclipse.persistence.config.PersistenceUnitProperties.CACHE_STATEMENTS;
+import static org.eclipse.persistence.config.PersistenceUnitProperties.CACHE_STATEMENTS_SIZE;
 import static org.eclipse.persistence.config.PersistenceUnitProperties.CREATE_JDBC_DDL_FILE;
 import static org.eclipse.persistence.config.PersistenceUnitProperties.CREATE_ONLY;
 import static org.eclipse.persistence.config.PersistenceUnitProperties.CREATE_OR_EXTEND;
@@ -211,6 +213,9 @@ public class ControllerModule extends AbstractModule {
         properties.setProperty(JDBC_DRIVER, Configuration.JDBC_LOCAL_DRIVER);
         break;
     }
+    // internal caching
+    properties.setProperty(CACHE_STATEMENTS, String.valueOf(configuration.isCacheEnabled()));
+    properties.setProperty(CACHE_STATEMENTS_SIZE, String.valueOf(configuration.getCacheStatementsSize()));
 
     // determine the type of pool to use
     boolean isConnectionPoolingExternal = false;
@@ -257,6 +262,8 @@ public class ControllerModule extends AbstractModule {
       dataSource.setAcquireIncrement(configuration.getConnectionPoolAcquisitionSize());
       dataSource.setAcquireRetryAttempts(configuration.getConnectionPoolAcquisitionRetryAttempts());
       dataSource.setAcquireRetryDelay(configuration.getConnectionPoolAcquisitionRetryDelay());
+      dataSource.setMaxStatements(configuration.getConnectionPoolMaxStatements());
+      dataSource.setMaxStatementsPerConnection(configuration.getConnectionPoolMaxStatementsPerConnection());
 
       // validity
       dataSource.setMaxConnectionAge(configuration.getConnectionPoolMaximumAge());
