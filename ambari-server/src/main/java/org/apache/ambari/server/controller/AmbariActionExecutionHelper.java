@@ -261,6 +261,13 @@ public class AmbariActionExecutionHelper {
     final String serviceName = actionContext.getExpectedServiceName();
     final String componentName = actionContext.getExpectedComponentName();
 
+    LOG.debug("Called addExecutionCommandsToStage() for serviceName: {}, componentName: {}.", serviceName, componentName);
+    if (resourceFilter.getHostNames().isEmpty()) {
+      LOG.debug("Resource filter has no hostnames.");
+    } else {
+      LOG.debug("Resource filter has hosts: {}", StringUtils.join(resourceFilter.getHostNames(), ", "));
+    }
+
     if (null != cluster) {
       StackId stackId = cluster.getCurrentStackVersion();
       if (serviceName != null && !serviceName.isEmpty()) {
@@ -274,6 +281,7 @@ public class AmbariActionExecutionHelper {
                 stackId.getStackVersion(), serviceName, componentName);
           } catch (ObjectNotFoundException e) {
             // do nothing, componentId is checked for null later
+            LOG.error("Did not find service {} and component {} in stack {}.", serviceName, componentName, stackId.getStackName());
           }
         } else {
           for (String component : cluster.getService(serviceName).getServiceComponents().keySet()) {
@@ -287,6 +295,7 @@ public class AmbariActionExecutionHelper {
         // All hosts are valid target host
         candidateHosts.addAll(clusters.getHostsForCluster(cluster.getClusterName()).keySet());
       }
+      LOG.debug("Request for service {} and component {} is set to run on candidate hosts: {}.", serviceName, componentName, StringUtils.join(candidateHosts, ", "));
 
       // Filter hosts that are in MS
       Set<String> ignoredHosts = maintenanceStateHelper.filterHostsInMaintenanceState(
@@ -300,7 +309,9 @@ public class AmbariActionExecutionHelper {
                 }
               }
       );
+
       if (! ignoredHosts.isEmpty()) {
+        LOG.debug("Hosts to ignore: {}.", StringUtils.join(ignoredHosts, ", "));
         LOG.debug("Ignoring action for hosts due to maintenance state." +
             "Ignored hosts =" + ignoredHosts + ", component="
             + componentName + ", service=" + serviceName
@@ -322,7 +333,7 @@ public class AmbariActionExecutionHelper {
       for (String hostname : resourceFilter.getHostNames()) {
         if (!candidateHosts.contains(hostname)) {
           throw new AmbariException("Request specifies host " + hostname +
-            " but its not a valid host based on the " +
+            " but it is not a valid host based on the " +
             "target service=" + serviceName + " and component=" + componentName);
         }
       }
