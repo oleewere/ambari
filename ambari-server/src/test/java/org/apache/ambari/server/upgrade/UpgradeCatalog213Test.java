@@ -56,6 +56,7 @@ import org.apache.ambari.server.state.kerberos.*;
 import org.apache.ambari.server.state.stack.OsFamily;
 import org.apache.ambari.server.state.stack.upgrade.RepositoryVersionHelper;
 import org.easymock.Capture;
+import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.easymock.IMocksControl;
@@ -258,6 +259,7 @@ public class UpgradeCatalog213Test {
     Method updateAccumuloConfigs = UpgradeCatalog213.class.getDeclaredMethod("updateAccumuloConfigs");
     Method updateKerberosDescriptorArtifacts = AbstractUpgradeCatalog.class.getDeclaredMethod("updateKerberosDescriptorArtifacts");
     Method updateKnoxTopology = UpgradeCatalog213.class.getDeclaredMethod("updateKnoxTopology");
+    Method updateCorruptedReplicaWidget = UpgradeCatalog213.class.getDeclaredMethod("updateCorruptedReplicaWidget");
 
 
     UpgradeCatalog213 upgradeCatalog213 = createMockBuilder(UpgradeCatalog213.class)
@@ -277,6 +279,7 @@ public class UpgradeCatalog213Test {
         .addMockedMethod(updateAccumuloConfigs)
         .addMockedMethod(updateKerberosDescriptorArtifacts)
         .addMockedMethod(updateKnoxTopology)
+        .addMockedMethod(updateCorruptedReplicaWidget)
         .createMock();
 
     upgradeCatalog213.addNewConfigurationsFromXml();
@@ -310,6 +313,8 @@ public class UpgradeCatalog213Test {
     upgradeCatalog213.updateKerberosDescriptorArtifacts();
     expectLastCall().once();
     upgradeCatalog213.updateKnoxTopology();
+    expectLastCall().once();
+    upgradeCatalog213.updateCorruptedReplicaWidget();
     expectLastCall().once();
 
     replay(upgradeCatalog213);
@@ -1490,7 +1495,7 @@ public class UpgradeCatalog213Test {
                     Map.class, boolean.class, boolean.class)
             .createMock();
     upgradeCatalog213.updateConfigurationPropertiesForCluster(mockClusterExpected,
-            "topology", propertiesTopologyExpected, true, false);
+      "topology", propertiesTopologyExpected, true, false);
     expectLastCall().once();
 
     easyMockSupport.replayAll();
@@ -1629,5 +1634,41 @@ public class UpgradeCatalog213Test {
     replay(upgradeCatalog213);
     upgradeCatalog213.updateAccumuloConfigs();
     easyMockSupport.verifyAll();
+  }
+
+  @Test
+  public void testUpdateCorruptedReplicaWidget() throws SQLException{
+    final DBAccessor dbAccessor = createStrictMock(DBAccessor.class);
+    Module module = new Module() {
+      @Override
+      public void configure(Binder binder) {
+        binder.bind(DBAccessor.class).toInstance(dbAccessor);
+        binder.bind(OsFamily.class).toInstance(createNiceMock(OsFamily.class));
+        binder.bind(EntityManager.class).toInstance(entityManager);
+      }
+    };
+
+    Injector injector = Guice.createInjector(module);
+
+    String expectedWidgetUpdate = "UPDATE widget SET widget_name='%s', description='%s', " +
+      "widget_values='[{\"name\": \"%s\", \"value\": \"%s\"}]' WHERE widget_name='%s'";
+    Capture<String> capturedStatements = Capture.newInstance(CaptureType.ALL);
+
+    expect(dbAccessor.executeUpdate(capture(capturedStatements))).andReturn(1);
+
+    UpgradeCatalog213 upgradeCatalog213 = injector.getInstance(UpgradeCatalog213.class);
+    replay(dbAccessor);
+
+    upgradeCatalog213.updateCorruptedReplicaWidget();
+
+    List<String> statements = capturedStatements.getValues();
+
+    assertTrue(statements.contains(String.format(expectedWidgetUpdate,
+      UpgradeCatalog213.WIDGET_CORRUPT_REPLICAS,
+      UpgradeCatalog213.WIDGET_CORRUPT_REPLICAS_DESCRIPTION,
+      UpgradeCatalog213.WIDGET_CORRUPT_REPLICAS,
+      UpgradeCatalog213.WIDGET_VALUES_VALUE,
+      UpgradeCatalog213.WIDGET_CORRUPT_BLOCKS)));
+
   }
 }

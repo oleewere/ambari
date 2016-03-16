@@ -150,6 +150,19 @@ public class UpgradeCatalog213 extends AbstractUpgradeCatalog {
 
   private static final String KNOX_SERVICE = "KNOX";
 
+  protected static final String WIDGET_TABLE = "widget";
+  protected static final String WIDGET_DESCRIPTION = "description";
+  protected static final String WIDGET_NAME = "widget_name";
+  protected static final String WIDGET_CORRUPT_BLOCKS = "Corrupted Blocks";
+  protected static final String WIDGET_CORRUPT_REPLICAS = "Blocks With Corrupted Replicas";
+  protected static final String WIDGET_CORRUPT_REPLICAS_DESCRIPTION = "Number represents data blocks with at least one " +
+    "corrupted replica (but not all of them). Its indicative of HDFS bad health.";
+  protected static final String WIDGET_VALUES = "widget_values";
+  protected static final String WIDGET_VALUES_VALUE =
+    "${Hadoop:service\\" +
+      "\\u003dNameNode,name\\" +
+      "\\u003dFSNamesystem.CorruptBlocks}";
+
   /**
    * Logger.
    */
@@ -316,6 +329,7 @@ public class UpgradeCatalog213 extends AbstractUpgradeCatalog {
     updateAccumuloConfigs();
     updateKerberosDescriptorArtifacts();
     updateKnoxTopology();
+    updateCorruptedReplicaWidget();
   }
 
   protected void updateKnoxTopology() throws AmbariException {
@@ -1336,5 +1350,20 @@ public class UpgradeCatalog213 extends AbstractUpgradeCatalog {
         }
       } // else -- no special client-configuration is necessary.
     }
+  }
+
+  protected void updateCorruptedReplicaWidget() throws SQLException {
+    String widgetValues = String.format("[{\"name\": \"%s\", \"value\": \"%s\"}]",
+      WIDGET_CORRUPT_REPLICAS, WIDGET_VALUES_VALUE);
+    String updateStatement = "UPDATE %s SET %s='%s', %s='%s', %s='%s' WHERE %s='%s'";
+
+    LOG.info("Update widget definition for HDFS corrupted blocks metric");
+    dbAccessor.executeUpdate(String.format(updateStatement,
+      WIDGET_TABLE,
+      WIDGET_NAME, WIDGET_CORRUPT_REPLICAS,
+      WIDGET_DESCRIPTION, WIDGET_CORRUPT_REPLICAS_DESCRIPTION,
+      WIDGET_VALUES, widgetValues,
+      WIDGET_NAME, WIDGET_CORRUPT_BLOCKS
+    ));
   }
 }
