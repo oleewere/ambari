@@ -624,6 +624,8 @@ public class Configuration {
    */
   public static final String METRIC_RETRIEVAL_SERVICE_THREADPOOL_WORKER_QUEUE_SIZE = "server.metrics.retrieval-service.threadpool.worker.size";
 
+  public static final String ALERTS_SNMP_DISPATCH_UDP_PORT = "alerts.snmp.dispatcher.udp.port";
+
   private static final Logger LOG = LoggerFactory.getLogger(
       Configuration.class);
 
@@ -2824,4 +2826,13 @@ public class Configuration {
             String.valueOf(10 * getMetricsServiceThreadPoolMaxSize())));
   }
 
+
+  /**
+   * Customized UDP port for SNMP dispatcher
+   * @return Integer if property exists else null
+   */
+  public Integer getSNMPUdpBindPort() {
+    String udpPort = properties.getProperty(ALERTS_SNMP_DISPATCH_UDP_PORT);
+    return StringUtils.isEmpty(udpPort) ? null : Integer.parseInt(udpPort);
+  }
 }
