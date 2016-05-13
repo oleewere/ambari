@@ -210,7 +210,12 @@ class TestJobHistoryServer(RMFTestCase):
         owner = 'spark',
         group = 'spark',
     )
-
+    self.assertResourceCalled('File', '/usr/hdp/current/spark-client/conf/java-opts',
+        content = InlineTemplate(' '),
+        owner = 'spark',
+        group = 'spark',
+    )
+      
   def assert_configure_secured(self):
     self.assertResourceCalled('Directory', '/var/run/spark',
         owner = 'spark',
@@ -272,7 +277,11 @@ class TestJobHistoryServer(RMFTestCase):
         owner = 'spark',
         group = 'spark',
     )
-
+    self.assertResourceCalled('File', '/usr/hdp/current/spark-client/conf/java-opts',
+        content = InlineTemplate(' '),
+        owner = 'spark',
+        group = 'spark',
+    )
 
   @patch("resource_management.libraries.functions.copy_tarball.copy_to_hdfs")
   def test_pre_upgrade_restart_23(self, copy_to_hdfs_mock):

@@ -27,6 +27,7 @@ import resource_management.libraries.functions
 from resource_management.libraries.functions import conf_select
 from resource_management.libraries.functions import hdp_select
 from resource_management.libraries.functions import format
+from resource_management.libraries.functions.version import compare_versions
 from resource_management.libraries.functions.get_hdp_version import get_hdp_version
 from resource_management.libraries.functions.version import format_hdp_stack_version
 from resource_management.libraries.functions.default import default
@@ -107,9 +108,13 @@ spark_history_ui_port = config['configurations']['spark-defaults']['spark.histor
 spark_env_sh = config['configurations']['spark-env']['content']
 spark_log4j_properties = config['configurations']['spark-log4j-properties']['content']
 spark_metrics_properties = config['configurations']['spark-metrics-properties']['content']
+spark_javaopts_properties = config['configurations']['spark-javaopts-properties']['content']
 
 hive_server_host = default("/clusterHostInfo/hive_server_host", [])
 is_hive_installed = not len(hive_server_host) == 0
+
+hdp_full_version = functions.get_hdp_version('spark-client')
+spark_javaopts_properties = default("/configurations/spark-javaopts-properties/content", " ")
 
 security_enabled = config['configurations']['cluster-env']['security_enabled']
 kinit_path_local = get_kinit_path(default('/configurations/kerberos-env/executable_search_paths', None))

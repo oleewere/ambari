@@ -74,6 +74,12 @@ def setup_spark(env, type, action = None):
        content=InlineTemplate(params.spark_metrics_properties)
   )
 
+  File(os.path.join(params.spark_conf, 'java-opts'),
+       owner=params.spark_user,
+       group=params.spark_group,
+       content=InlineTemplate(params.spark_javaopts_properties)
+  )
+
   if params.is_hive_installed:
     XmlConfig("hive-site.xml",
           conf_dir=params.spark_conf,

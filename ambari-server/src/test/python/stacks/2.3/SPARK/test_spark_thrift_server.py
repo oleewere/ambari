@@ -138,6 +138,11 @@ class TestSparkThriftServer(RMFTestCase):
         owner = 'spark',
         group = 'spark',
     )
+    self.assertResourceCalled('File', '/usr/hdp/current/spark-client/conf/java-opts',
+        content = InlineTemplate(' '),
+        owner = 'spark',
+        group = 'spark',
+    )
     self.assertResourceCalled('PropertiesFile', '/usr/hdp/current/spark-client/conf/spark-thrift-sparkconf.conf',
         key_value_delimiter = ' ',
         owner = 'hive',
