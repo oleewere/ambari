@@ -19,6 +19,8 @@ package org.apache.ambari.server.security.authorization;
 
 
 import org.apache.ambari.server.configuration.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ldap.core.AttributesMapper;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.LdapTemplate;
@@ -36,6 +38,8 @@ import javax.naming.directory.Attributes;
  * admin authorities according to LDAP group membership
  */
 public class AmbariLdapBindAuthenticator extends BindAuthenticator {
+
+  private static final Logger LOG = LoggerFactory.getLogger(AmbariLdapBindAuthenticator.class);
 
   private Configuration configuration;
 
@@ -65,14 +69,21 @@ public class AmbariLdapBindAuthenticator extends BindAuthenticator {
     LdapServerProperties ldapServerProperties =
         configuration.getLdapServerProperties();
 
+    LOG.info("Check that user is a member of ambari administrators group in LDAP...");
     String baseDn = ldapServerProperties.getBaseDN().toLowerCase();
+    LOG.info("groupBase: {}", ldapServerProperties.getGroupBase().toLowerCase());
     String groupBase = ldapServerProperties.getGroupBase().toLowerCase();
+    LOG.info("groupObjectClass: {}", ldapServerProperties.getGroupObjectClass());
     String groupObjectClass = ldapServerProperties.getGroupObjectClass();
+    LOG.info("groupMembershipAttr: {}", ldapServerProperties.getGroupMembershipAttr());
     String groupMembershipAttr = ldapServerProperties.getGroupMembershipAttr();
+    LOG.info("adminGroupMappingRules: {}", ldapServerProperties.getAdminGroupMappingRules());
     String adminGroupMappingRules =
         ldapServerProperties.getAdminGroupMappingRules();
+    LOG.info("groupNamingAttr: {}", ldapServerProperties.getGroupNamingAttr());
     final String groupNamingAttribute =
         ldapServerProperties.getGroupNamingAttr();
+    LOG.info("groupSearchFilter: {}", ldapServerProperties.getGroupSearchFilter());
     String groupSearchFilter = ldapServerProperties.getGroupSearchFilter();
 
     //If groupBase is set incorrectly or isn't set - search in BaseDn
@@ -117,7 +128,7 @@ public class AmbariLdapBindAuthenticator extends BindAuthenticator {
     LdapTemplate ldapTemplate = new LdapTemplate((getContextSource()));
     ldapTemplate.setIgnorePartialResultException(true);
     ldapTemplate.setIgnoreNameNotFoundException(true);
-
+    LOG.info("ambariAdmingGroups - [groupBase] : {}, [filter] {}", groupBase, filterBuilder.toString(),attributesMapper);
     List<String> ambariAdminGroups = ldapTemplate.search(
         groupBase,filterBuilder.toString(),attributesMapper);
 

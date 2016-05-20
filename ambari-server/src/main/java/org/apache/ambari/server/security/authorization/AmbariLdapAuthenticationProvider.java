@@ -21,6 +21,9 @@ import com.google.inject.Inject;
 import java.util.List;
 import org.apache.ambari.server.configuration.Configuration;
 import org.apache.ambari.server.security.ClientSecurityType;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ldap.core.support.LdapContextSource;
@@ -54,12 +57,18 @@ public class AmbariLdapAuthenticationProvider implements AuthenticationProvider 
 
   @Override
   public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-
     if (isLdapEnabled()) {
+      LOG.info("LDAP is enabled, authenticating...");
       try {
-        return loadLdapAuthenticationProvider().authenticate(authentication);
+        Authentication auth = loadLdapAuthenticationProvider().authenticate(authentication);
+        LOG.info("Authenticate - Authorities: {}", StringUtils.join(auth.getAuthorities(), ","));
+        LOG.info("Authenticate - Name: {}", auth.getName());
+        LOG.info("Authenticate - Credentials: {}", auth.getCredentials());
+        LOG.info("Authenticate - Principal: {}", ToStringBuilder.reflectionToString(auth.getPrincipal(), ToStringStyle.SIMPLE_STYLE));
+        LOG.info("Authenticate - Details: {}", auth.getDetails());
+        return auth;
       } catch (AuthenticationException e) {
-        LOG.debug("Got exception during LDAP authentification attempt", e);
+        LOG.info("Got exception during LDAP authentification attempt", e);
         // Try to help in troubleshooting
         Throwable cause = e.getCause();
         if (cause != null) {
@@ -92,6 +101,7 @@ public class AmbariLdapAuthenticationProvider implements AuthenticationProvider 
   LdapAuthenticationProvider loadLdapAuthenticationProvider() {
     if (reloadLdapServerProperties()) {
       LOG.info("LDAP Properties changed - rebuilding Context");
+      LOG.info("Authentication - ldap properties: {}", ldapServerProperties.get().toString());
       LdapContextSource springSecurityContextSource = new LdapContextSource();
       List<String> ldapUrls = ldapServerProperties.get().getLdapUrls();
       springSecurityContextSource.setUrls(ldapUrls.toArray(new String[ldapUrls.size()]));
@@ -114,7 +124,8 @@ public class AmbariLdapAuthenticationProvider implements AuthenticationProvider 
       String userSearchFilter = ldapServerProperties.get().getUserSearchFilter();
 
       FilterBasedLdapUserSearch userSearch = new FilterBasedLdapUserSearch(userSearchBase, userSearchFilter, springSecurityContextSource);
-
+      LOG.info("userSearch base: {}", userSearchBase);
+      LOG.info("userSearch filter: {}", userSearchFilter);
       AmbariLdapBindAuthenticator bindAuthenticator = new AmbariLdapBindAuthenticator(springSecurityContextSource, configuration);
       bindAuthenticator.setUserSearch(userSearch);
 

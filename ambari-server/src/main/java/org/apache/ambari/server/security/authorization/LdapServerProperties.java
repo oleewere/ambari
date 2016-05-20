@@ -18,6 +18,8 @@
 package org.apache.ambari.server.security.authorization;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -312,6 +314,11 @@ public class LdapServerProperties {
     result = 31 * result + (dnAttribute != null ? dnAttribute.hashCode() : 0);
     result = 31 * result + (referralMethod != null ? referralMethod.hashCode() : 0);
     return result;
+  }
+
+  @Override
+  public String toString() {
+    return ToStringBuilder.reflectionToString(this, ToStringStyle.MULTI_LINE_STYLE);
   }
 
 }

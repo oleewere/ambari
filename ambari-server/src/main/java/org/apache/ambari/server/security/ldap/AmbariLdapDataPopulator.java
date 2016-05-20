@@ -36,8 +36,8 @@ import org.apache.ambari.server.security.authorization.Group;
 import org.apache.ambari.server.security.authorization.LdapServerProperties;
 import org.apache.ambari.server.security.authorization.User;
 import org.apache.ambari.server.security.authorization.Users;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ldap.control.PagedResultsDirContextProcessor;
 import org.springframework.ldap.core.AttributesMapper;
 import org.springframework.ldap.core.ContextMapper;
@@ -60,7 +60,7 @@ public class AmbariLdapDataPopulator {
   /**
    * Log.
    */
-  private static final Log LOG = LogFactory.getLog(AmbariLdapDataPopulator.class);
+  private static final Logger LOG = LoggerFactory.getLogger(AmbariLdapDataPopulator.class);
 
   /**
    * Ambari configuration.
@@ -528,6 +528,7 @@ public class AmbariLdapDataPopulator {
   private Set<LdapGroupDto> getFilteredLdapGroups(String baseDn, Filter filter) {
     final Set<LdapGroupDto> groups = new HashSet<LdapGroupDto>();
     final LdapTemplate ldapTemplate = loadLdapTemplate();
+    LOG.info("LDAP query (during sync): {} (baseDN), {} (filter)", baseDn, filter.encode());
     ldapTemplate.search(baseDn, filter.encode(), new LdapGroupContextMapper(groups, ldapServerProperties));
     return groups;
   }
@@ -561,6 +562,7 @@ public class AmbariLdapDataPopulator {
     String encodedFilter = filter.encode();
 
     do {
+      LOG.info("Get filtered LDAP users: {} (baseDN), {} (filter)", baseDn, filter.encode());
       List dtos = configuration.getLdapServerProperties().isPaginationEnabled() ?
         ldapTemplate.search(baseDn, encodedFilter, searchControls, ldapUserContextMapper, processor) :
         ldapTemplate.search(baseDn, encodedFilter, searchControls, ldapUserContextMapper);
@@ -633,7 +635,7 @@ public class AmbariLdapDataPopulator {
       ldapServerProperties = properties;
 
       final LdapContextSource ldapContextSource = createLdapContextSource();
-	  
+
       // The LdapTemplate by design will close the connection after each call to the LDAP Server
       // In order to have the interaction work with large/paged results, said connection must be pooled and reused
       ldapContextSource.setPooled(true);
