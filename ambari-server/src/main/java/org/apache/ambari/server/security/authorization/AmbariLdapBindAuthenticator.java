@@ -136,6 +136,9 @@ public class AmbariLdapBindAuthenticator extends BindAuthenticator {
     // which matches the rules in configuration
     if (ambariAdminGroups.size() > 0) {
       user.setAttributeValue(AMBARI_ADMIN_LDAP_ATTRIBUTE_KEY, true);
+      LOG.info("Admin role granted for user '{}' (dn)", user.getDn());
+    } else {
+      LOG.info("User '{}' (dn) is not an admin", user.getDn());
     }
 
     return user;
