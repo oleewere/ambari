@@ -18,6 +18,18 @@
 
 package org.apache.ambari.server.controller.jmx;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.ambari.server.controller.internal.PropertyInfo;
 import org.apache.ambari.server.controller.metrics.MetricHostProvider;
 import org.apache.ambari.server.controller.metrics.ThreadPoolEnabledPropertyProvider;
@@ -32,17 +44,6 @@ import org.codehaus.jackson.map.ObjectReader;
 import org.codehaus.jackson.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Property provider implementation for JMX sources.
@@ -98,6 +99,8 @@ public class JMXPropertyProvider extends ThreadPoolEnabledPropertyProvider {
 
   private final String statePropertyId;
 
+  private final Map<String, String> clusterComponentPortsMap;
+
   // ----- Constructors ------------------------------------------------------
 
   /**
@@ -129,9 +132,16 @@ public class JMXPropertyProvider extends ThreadPoolEnabledPropertyProvider {
     this.hostNamePropertyId       = hostNamePropertyId;
     this.componentNamePropertyId  = componentNamePropertyId;
     this.statePropertyId          = statePropertyId;
+    clusterComponentPortsMap = new HashMap<>();
   }
 
   // ----- helper methods ----------------------------------------------------
+
+  @Override
+  public Set<Resource> populateResources(Set<Resource> resources, Request request, Predicate predicate) throws SystemException {
+    clusterComponentPortsMap.clear();
+    return super.populateResources(resources, request, predicate);
+  }
 
   /**
    * Populate a resource by obtaining the requested JMX properties.
@@ -350,14 +360,20 @@ public class JMXPropertyProvider extends ThreadPoolEnabledPropertyProvider {
   }
 
   private String getPort(String clusterName, String componentName, String hostName, boolean httpsEnabled) throws SystemException {
-    String port = jmxHostProvider.getPort(clusterName, componentName, hostName, httpsEnabled);
-    return port == null ? DEFAULT_JMX_PORTS.get(componentName) : port;
+    String portMapKey = String.format("%s-%s-%s", clusterName, componentName, httpsEnabled);
+    String port = clusterComponentPortsMap.get(portMapKey);
+    if (port==null) {
+      port = jmxHostProvider.getPort(clusterName, componentName, hostName, httpsEnabled);
+      port = port == null ? DEFAULT_JMX_PORTS.get(componentName) : port;
+      clusterComponentPortsMap.put(portMapKey, port);
+    }
+    return port;
   }
 
   private String getJMXProtocol(String clusterName, String componentName) {
     return jmxHostProvider.getJMXProtocol(clusterName, componentName);
   }
-  
+
   private Set<String> getHosts(Resource resource, String clusterName, String componentName) {
     return hostNamePropertyId == null ?
             jmxHostProvider.getHostNames(clusterName, componentName) :
