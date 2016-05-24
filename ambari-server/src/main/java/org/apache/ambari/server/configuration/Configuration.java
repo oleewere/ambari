@@ -17,11 +17,18 @@
  */
 package org.apache.ambari.server.configuration;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
 
 import org.apache.ambari.annotations.Experimental;
 import org.apache.ambari.annotations.ExperimentalFeature;
@@ -43,18 +50,11 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
 
 /**
@@ -385,7 +385,7 @@ public class Configuration {
 
   private static final long SERVER_EC_CACHE_SIZE_DEFAULT = 10000L;
   private static final String SERVER_STALE_CONFIG_CACHE_ENABLED_DEFAULT = "true";
-  private static final String SERVER_STALE_CONFIG_CACHE_EXPIRATION_DEFAULT = "60";
+  private static final String SERVER_STALE_CONFIG_CACHE_EXPIRATION_DEFAULT = "300";
   private static final String SERVER_JDBC_USER_NAME_DEFAULT = "ambari";
   private static final String SERVER_JDBC_USER_PASSWD_DEFAULT = "bigdata";
   private static final String SERVER_JDBC_RCA_USER_NAME_DEFAULT = "mapred";
@@ -2137,7 +2137,7 @@ public class Configuration {
 
   /**
    * Get property-providers' thread pool core size.
-   * 
+   *
    * @return the property-providers' thread pool core size
    */
   public int getPropertyProvidersThreadPoolCoreSize() {
@@ -2147,7 +2147,7 @@ public class Configuration {
 
   /**
    * Get property-providers' thread pool max size.
-   * 
+   *
    * @return the property-providers' thread pool max size
    */
   public int getPropertyProvidersThreadPoolMaxSize() {

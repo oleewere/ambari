@@ -38,6 +38,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.annotation.Nullable;
 import javax.persistence.RollbackException;
 
+import org.apache.ambari.annotations.TransactionalLock;
+import org.apache.ambari.annotations.TransactionalLock.LockArea;
+import org.apache.ambari.annotations.TransactionalLock.LockType;
 import org.apache.ambari.server.AmbariException;
 import org.apache.ambari.server.ConfigGroupNotFoundException;
 import org.apache.ambari.server.DuplicateResourceException;
@@ -88,7 +91,6 @@ import org.apache.ambari.server.orm.entities.HostVersionEntity;
 import org.apache.ambari.server.orm.entities.PermissionEntity;
 import org.apache.ambari.server.orm.entities.PrivilegeEntity;
 import org.apache.ambari.server.orm.entities.RepositoryVersionEntity;
-import org.apache.ambari.server.orm.entities.RequestEntity;
 import org.apache.ambari.server.orm.entities.RequestScheduleEntity;
 import org.apache.ambari.server.orm.entities.ResourceEntity;
 import org.apache.ambari.server.orm.entities.ServiceConfigEntity;
@@ -1130,7 +1132,7 @@ public class ClusterImpl implements Cluster {
    * @return
    */
   private UpgradeEntity getUpgradeInProgress() {
-    UpgradeEntity mostRecentUpgrade = upgradeDAO.findLastUpgradeOrDowngradeForCluster(this.getClusterId());
+    UpgradeEntity mostRecentUpgrade = upgradeDAO.findLastUpgradeOrDowngradeForCluster(getClusterId());
 
     if (mostRecentUpgrade != null) {
       List<HostRoleStatus> UNFINISHED_STATUSES = new ArrayList();
@@ -1158,16 +1160,16 @@ public class ClusterImpl implements Cluster {
   @Override
   public ClusterVersionEntity getEffectiveClusterVersion() throws AmbariException {
     // This is not reliable. Need to find the last upgrade request.
-    UpgradeEntity upgradeInProgress = this.getUpgradeInProgress();
+    UpgradeEntity upgradeInProgress = getUpgradeInProgress();
     if (upgradeInProgress == null) {
-      return this.getCurrentClusterVersion();
+      return getCurrentClusterVersion();
     }
 
     String effectiveVersion = null;
     switch (upgradeInProgress.getUpgradeType()) {
       case NON_ROLLING:
         if (upgradeInProgress.getDirection() == Direction.UPGRADE) {
-          boolean pastChangingStack = this.isNonRollingUpgradePastUpgradingStack(upgradeInProgress);
+          boolean pastChangingStack = isNonRollingUpgradePastUpgradingStack(upgradeInProgress);
           effectiveVersion = pastChangingStack ? upgradeInProgress.getToVersion() : upgradeInProgress.getFromVersion();
         } else {
           // Should be the lower value during a Downgrade.
@@ -2295,21 +2297,13 @@ public class ClusterImpl implements Cluster {
    */
   @Override
   public Map<String, Set<DesiredConfig>> getAllDesiredConfigVersions() {
-    return getDesiredConfigs(true, false);
+    return getDesiredConfigs(true);
   }
 
-  /**
-   * Gets the active desired configurations for the cluster.
-   * @return a map of type-to-configuration information.
-   */
+
   @Override
   public Map<String, DesiredConfig> getDesiredConfigs() {
-    return getDesiredConfigs(false);
-  }
-
-  @Override
-  public Map<String, DesiredConfig> getDesiredConfigs(boolean bypassCache) {
-    Map<String, Set<DesiredConfig>> activeConfigsByType = getDesiredConfigs(false, bypassCache);
+    Map<String, Set<DesiredConfig>> activeConfigsByType = getDesiredConfigs(false);
     return Maps.transformEntries(
         activeConfigsByType,
         new Maps.EntryTransformer<String, Set<DesiredConfig>, DesiredConfig>() {
@@ -2327,16 +2321,14 @@ public class ClusterImpl implements Cluster {
    *                    desired configuration per config type.
    * @return a map of type-to-configuration information.
    */
-  private Map<String, Set<DesiredConfig>> getDesiredConfigs(boolean allVersions, boolean bypassCache) {
+  private Map<String, Set<DesiredConfig>> getDesiredConfigs(boolean allVersions) {
     loadConfigurations();
     clusterGlobalLock.readLock().lock();
     try {
       Map<String, Set<DesiredConfig>> map = new HashMap<>();
       Collection<String> types = new HashSet<>();
-      Collection<ClusterConfigMappingEntity> entities =
-          bypassCache ?
-              clusterDAO.getClusterConfigMappingEntitiesByCluster(getClusterId()) :
-              getClusterEntity().getConfigMappingEntities();
+      Collection<ClusterConfigMappingEntity> entities = getClusterEntity().getConfigMappingEntities();
+
       for (ClusterConfigMappingEntity e : entities) {
         if (allVersions || e.isSelected() > 0) {
           DesiredConfig c = new DesiredConfig();
@@ -2489,6 +2481,7 @@ public class ClusterImpl implements Cluster {
     return serviceName;
   }
 
+  @Override
   public String getServiceByConfigType(String configType) {
     for (Entry<String, String> entry : serviceConfigTypes.entries()) {
       String serviceName = entry.getKey();
@@ -2749,6 +2742,7 @@ public class ClusterImpl implements Cluster {
   }
 
   @Transactional
+  @TransactionalLock(lockArea = LockArea.STALE_CONFIG_CACHE, lockType = LockType.WRITE)
   void selectConfig(String type, String tag, String user) {
     Collection<ClusterConfigMappingEntity> entities =
         clusterDAO.getClusterConfigMappingEntitiesByCluster(getClusterId());
@@ -2777,6 +2771,7 @@ public class ClusterImpl implements Cluster {
   }
 
   @Transactional
+  @TransactionalLock(lockArea = LockArea.STALE_CONFIG_CACHE, lockType = LockType.WRITE)
   ServiceConfigVersionResponse applyConfigs(Set<Config> configs, String user, String serviceConfigVersionNote) {
 
     String serviceName = null;
@@ -3093,6 +3088,9 @@ public class ClusterImpl implements Cluster {
     int alertStatusHosts = 0;
     int heartbeatLostStateHosts = 0;
 
+    // look this up once so it can be reused in the loop for every SCH
+    Map<String, DesiredConfig> desiredConfigs = getDesiredConfigs();
+
     Collection<Host> hosts = clusterHosts.values();
     Iterator<Host> iterator = hosts.iterator();
     while (iterator.hasNext()) {
@@ -3134,7 +3132,7 @@ public class ClusterImpl implements Cluster {
 
       if (serviceComponentHostsByHost.containsKey(hostName)) {
         for (ServiceComponentHost sch : serviceComponentHostsByHost.get(hostName)) {
-          staleConfig = staleConfig || configHelper.isStaleConfigs(sch);
+          staleConfig = staleConfig || configHelper.isStaleConfigs(sch, desiredConfigs);
           maintenanceState = maintenanceState ||
             maintenanceStateHelper.getEffectiveState(sch) != MaintenanceState.OFF;
         }

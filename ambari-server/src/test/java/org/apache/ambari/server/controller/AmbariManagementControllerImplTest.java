@@ -1043,7 +1043,7 @@ public class AmbariManagementControllerImplTest {
       new HashMap<String, ServiceComponentHost>() {{
         put("host1", componentHost);
     }});
-    expect(componentHost.convertToResponse()).andReturn(response);
+    expect(componentHost.convertToResponse(null)).andReturn(response);
     expect(componentHost.getHostName()).andReturn("host1").anyTimes();
     expect(maintHelper.getEffectiveState(componentHost, host)).andReturn(MaintenanceState.OFF);
 
@@ -1183,7 +1183,7 @@ public class AmbariManagementControllerImplTest {
     }});
 
     expect(componentHost1.getState()).andReturn(State.INSTALLED);
-    expect(componentHost1.convertToResponse()).andReturn(response1);
+    expect(componentHost1.convertToResponse(null)).andReturn(response1);
     expect(componentHost1.getHostName()).andReturn("host1");
 
     // replay mocks
@@ -1270,7 +1270,7 @@ public class AmbariManagementControllerImplTest {
       new HashMap<String, ServiceComponentHost>() {{
         put("host1", componentHost1);
       }});
-    expect(componentHost1.convertToResponse()).andReturn(response1);
+    expect(componentHost1.convertToResponse(null)).andReturn(response1);
     expect(componentHost1.getHostName()).andReturn("host1");
 
     expect(ambariMetaInfo.getComponentToService("stackName", "stackVersion", "component2")).andReturn("service1");
@@ -1286,7 +1286,7 @@ public class AmbariManagementControllerImplTest {
       new HashMap<String, ServiceComponentHost>() {{
         put("host1", componentHost2);
       }});
-    expect(componentHost2.convertToResponse()).andReturn(response2);
+    expect(componentHost2.convertToResponse(null)).andReturn(response2);
 
     // replay mocks
     replay(stateHelper, injector, clusters, cluster, host, stack,
@@ -1374,7 +1374,7 @@ public class AmbariManagementControllerImplTest {
       HashMap<String, ServiceComponentHost>() {{
         put("host1", componentHost1);
       }});
-    expect(componentHost1.convertToResponse()).andReturn(response1);
+    expect(componentHost1.convertToResponse(null)).andReturn(response1);
     expect(componentHost1.getHostName()).andReturn("host1");
 
     expect(ambariMetaInfo.getComponentToService("stackName", "stackVersion", "component2")).andReturn("service2");
@@ -1388,7 +1388,7 @@ public class AmbariManagementControllerImplTest {
       HashMap<String, ServiceComponentHost>() {{
         put("host1", componentHost2);
       }});
-    expect(componentHost2.convertToResponse()).andReturn(response2);
+    expect(componentHost2.convertToResponse(null)).andReturn(response2);
     expect(componentHost2.getHostName()).andReturn("host1");
 
     // replay mocks
@@ -1480,7 +1480,7 @@ public class AmbariManagementControllerImplTest {
       new HashMap<String, ServiceComponentHost>() {{
         put("host1", componentHost1);
       }});
-    expect(componentHost1.convertToResponse()).andReturn(response1);
+    expect(componentHost1.convertToResponse(null)).andReturn(response1);
     expect(componentHost1.getHostName()).andReturn("host1");
 
     expect(ambariMetaInfo.getComponentToService("stackName", "stackVersion", "component2")).andReturn("service2");
@@ -1496,7 +1496,7 @@ public class AmbariManagementControllerImplTest {
       new HashMap<String, ServiceComponentHost>() {{
         put("host1", componentHost2);
       }});
-    expect(componentHost2.convertToResponse()).andReturn(response2);
+    expect(componentHost2.convertToResponse(null)).andReturn(response2);
     expect(componentHost2.getHostName()).andReturn("host1");
 
     // replay mocks
@@ -1583,7 +1583,7 @@ public class AmbariManagementControllerImplTest {
     expect(service.getServiceComponent("component1")).andReturn(component);
     expect(component.getName()).andReturn("component1");
     expect(component.getServiceComponentHosts()).andReturn(Collections.singletonMap("foo", componentHost1));
-    expect(componentHost1.convertToResponse()).andReturn(response1);
+    expect(componentHost1.convertToResponse(null)).andReturn(response1);
     expect(componentHost1.getHostName()).andReturn("host1");
 
     expect(clusters.getClustersForHost("host2")).andThrow(new HostNotFoundException("host2"));
@@ -1593,7 +1593,7 @@ public class AmbariManagementControllerImplTest {
     expect(service.getServiceComponent("component3")).andReturn(component3);
     expect(component3.getName()).andReturn("component3");
     expect(component3.getServiceComponentHosts()).andReturn(Collections.singletonMap("foo", componentHost2));
-    expect(componentHost2.convertToResponse()).andReturn(response2);
+    expect(componentHost2.convertToResponse(null)).andReturn(response2);
     expect(componentHost2.getHostName()).andReturn("host1");
 
     // replay mocks
@@ -1784,8 +1784,8 @@ public class AmbariManagementControllerImplTest {
     expect(component.getName()).andReturn("component1").anyTimes();
 
     expect(component.getServiceComponentHosts()).andReturn(mapHostComponents);
-    expect(componentHost1.convertToResponse()).andReturn(response1);
-    expect(componentHost2.convertToResponse()).andReturn(response2);
+    expect(componentHost1.convertToResponse(null)).andReturn(response1);
+    expect(componentHost2.convertToResponse(null)).andReturn(response2);
     expect(componentHost1.getHostName()).andReturn("host1");
     expect(componentHost2.getHostName()).andReturn("host1");
 
@@ -1870,14 +1870,14 @@ public class AmbariManagementControllerImplTest {
     expect(component2.getName()).andReturn("component2").anyTimes();
 
     expect(component1.getServiceComponentHosts()).andReturn(mapHostComponents);
-    expect(componentHost1.convertToResponse()).andReturn(response1);
-    expect(componentHost2.convertToResponse()).andReturn(response2);
+    expect(componentHost1.convertToResponse(null)).andReturn(response1);
+    expect(componentHost2.convertToResponse(null)).andReturn(response2);
     expect(componentHost1.getHostName()).andReturn("host1");
     expect(componentHost2.getHostName()).andReturn("host1");
     expect(componentHost3.getHostName()).andReturn("host1");
 
     expect(component2.getServiceComponentHosts()).andReturn(Collections.singletonMap("foobar", componentHost3));
-    expect(componentHost3.convertToResponse()).andReturn(response3);
+    expect(componentHost3.convertToResponse(null)).andReturn(response3);
 
     // replay mocks
     replay(maintHelper, injector, clusters, cluster, response1, response2,
