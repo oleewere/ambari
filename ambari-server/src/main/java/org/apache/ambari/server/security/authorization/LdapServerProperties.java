@@ -52,6 +52,8 @@ public class LdapServerProperties {
   private String usernameAttribute;
   private String userSearchBase = "";
 
+  private String syncGroupMemberReplacePattern = "";
+  private String syncUserMemberReplacePattern = "";
   private String groupSearchFilter;
   private static final String userSearchFilter = "(&({attribute}={0})(objectClass={userObjectClass}))";
 
@@ -247,6 +249,22 @@ public class LdapServerProperties {
     this.paginationEnabled = paginationEnabled;
   }
 
+  public String getSyncGroupMemberReplacePattern() {
+    return syncGroupMemberReplacePattern;
+  }
+
+  public void setSyncGroupMemberReplacePattern(String syncGroupMemberReplacePattern) {
+    this.syncGroupMemberReplacePattern = syncGroupMemberReplacePattern;
+  }
+
+  public String getSyncUserMemberReplacePattern() {
+    return syncUserMemberReplacePattern;
+  }
+
+  public void setSyncUserMemberReplacePattern(String syncUserMemberReplacePattern) {
+    this.syncUserMemberReplacePattern = syncUserMemberReplacePattern;
+  }
+
   @Override
   public boolean equals(Object obj) {
     if (this == obj) return true;
@@ -282,6 +300,10 @@ public class LdapServerProperties {
         that.groupSearchFilter) : that.groupSearchFilter != null) return false;
     if (dnAttribute != null ? !dnAttribute.equals(
         that.dnAttribute) : that.dnAttribute != null) return false;
+    if (syncGroupMemberReplacePattern != null ? !syncGroupMemberReplacePattern.equals(
+      that.syncGroupMemberReplacePattern) : that.syncGroupMemberReplacePattern != null) return false;
+    if (syncUserMemberReplacePattern != null ? !syncUserMemberReplacePattern.equals(
+      that.syncUserMemberReplacePattern) : that.syncUserMemberReplacePattern != null) return false;
     if (referralMethod != null ? !referralMethod.equals(that.referralMethod) : that.referralMethod != null) return false;
 
     if (groupMappingEnabled != that.isGroupMappingEnabled()) return false;
@@ -310,6 +332,8 @@ public class LdapServerProperties {
     result = 31 * result + (adminGroupMappingRules != null ? adminGroupMappingRules.hashCode() : 0);
     result = 31 * result + (groupSearchFilter != null ? groupSearchFilter.hashCode() : 0);
     result = 31 * result + (dnAttribute != null ? dnAttribute.hashCode() : 0);
+    result = 31 * result + (syncUserMemberReplacePattern != null ? syncUserMemberReplacePattern.hashCode() : 0);
+    result = 31 * result + (syncGroupMemberReplacePattern != null ? syncGroupMemberReplacePattern.hashCode() : 0);
     result = 31 * result + (referralMethod != null ? referralMethod.hashCode() : 0);
     return result;
   }
