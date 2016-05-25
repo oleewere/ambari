@@ -52,9 +52,12 @@ public class LdapServerProperties {
   private String usernameAttribute;
   private String userSearchBase = "";
 
+  private String syncGroupMemberReplacePattern = "";
+  private String syncUserMemberReplacePattern = "";
   private String groupSearchFilter;
   private static final String userSearchFilter = "(&({attribute}={0})(objectClass={userObjectClass}))";
-
+  private String syncUserMemberFilter = "";
+  private String syncGroupMemberFilter = "";
   //LDAP pagination properties
   private boolean paginationEnabled = true;
 
@@ -247,6 +250,38 @@ public class LdapServerProperties {
     this.paginationEnabled = paginationEnabled;
   }
 
+  public String getSyncGroupMemberReplacePattern() {
+    return syncGroupMemberReplacePattern;
+  }
+
+  public void setSyncGroupMemberReplacePattern(String syncGroupMemberReplacePattern) {
+    this.syncGroupMemberReplacePattern = syncGroupMemberReplacePattern;
+  }
+
+  public String getSyncUserMemberReplacePattern() {
+    return syncUserMemberReplacePattern;
+  }
+
+  public void setSyncUserMemberReplacePattern(String syncUserMemberReplacePattern) {
+    this.syncUserMemberReplacePattern = syncUserMemberReplacePattern;
+  }
+
+  public String getSyncUserMemberFilter() {
+    return syncUserMemberFilter;
+  }
+
+  public void setSyncUserMemberFilter(String syncUserMemberFilter) {
+    this.syncUserMemberFilter = syncUserMemberFilter;
+  }
+
+  public String getSyncGroupMemberFilter() {
+    return syncGroupMemberFilter;
+  }
+
+  public void setSyncGroupMemberFilter(String syncGroupMemberFilter) {
+    this.syncGroupMemberFilter = syncGroupMemberFilter;
+  }
+
   @Override
   public boolean equals(Object obj) {
     if (this == obj) return true;
@@ -282,6 +317,14 @@ public class LdapServerProperties {
         that.groupSearchFilter) : that.groupSearchFilter != null) return false;
     if (dnAttribute != null ? !dnAttribute.equals(
         that.dnAttribute) : that.dnAttribute != null) return false;
+    if (syncGroupMemberReplacePattern != null ? !syncGroupMemberReplacePattern.equals(
+      that.syncGroupMemberReplacePattern) : that.syncGroupMemberReplacePattern != null) return false;
+    if (syncUserMemberReplacePattern != null ? !syncUserMemberReplacePattern.equals(
+      that.syncUserMemberReplacePattern) : that.syncUserMemberReplacePattern != null) return false;
+    if (syncUserMemberFilter != null ? !syncUserMemberFilter.equals(
+      that.syncUserMemberFilter) : that.syncUserMemberFilter != null) return false;
+    if (syncGroupMemberFilter != null ? !syncGroupMemberFilter.equals(
+      that.syncGroupMemberFilter) : that.syncGroupMemberFilter != null) return false;
     if (referralMethod != null ? !referralMethod.equals(that.referralMethod) : that.referralMethod != null) return false;
 
     if (groupMappingEnabled != that.isGroupMappingEnabled()) return false;
@@ -310,6 +353,10 @@ public class LdapServerProperties {
     result = 31 * result + (adminGroupMappingRules != null ? adminGroupMappingRules.hashCode() : 0);
     result = 31 * result + (groupSearchFilter != null ? groupSearchFilter.hashCode() : 0);
     result = 31 * result + (dnAttribute != null ? dnAttribute.hashCode() : 0);
+    result = 31 * result + (syncUserMemberReplacePattern != null ? syncUserMemberReplacePattern.hashCode() : 0);
+    result = 31 * result + (syncGroupMemberReplacePattern != null ? syncGroupMemberReplacePattern.hashCode() : 0);
+    result = 31 * result + (syncUserMemberFilter != null ? syncUserMemberFilter.hashCode() : 0);
+    result = 31 * result + (syncGroupMemberFilter != null ? syncGroupMemberFilter.hashCode() : 0);
     result = 31 * result + (referralMethod != null ? referralMethod.hashCode() : 0);
     return result;
   }

@@ -176,6 +176,10 @@ public class Configuration {
   public static final String LDAP_GROUP_SEARCH_FILTER_KEY = "authorization.ldap.groupSearchFilter";
   public static final String LDAP_REFERRAL_KEY = "authentication.ldap.referral";
   public static final String LDAP_PAGINATION_ENABLED_KEY = "authentication.ldap.pagination.enabled";
+  public static final String LDAP_SYCN_USER_MEMBER_REPLACE_PATTERN = "authentication.ldap.sync.userMemberReplacePattern";
+  public static final String LDAP_SYCN_GROUP_MEMBER_REPLACE_PATTERN = "authentication.ldap.sync.groupMemberReplacePattern";
+  public static final String LDAP_SYCN_USER_MEMBER_FILTER = "authentication.ldap.sync.userMemberFilter";
+  public static final String LDAP_SYCN_GROUP_MEMBER_FILTER = "authentication.ldap.sync.groupMemberFilter";
   public static final String SERVER_EC_CACHE_SIZE = "server.ecCacheSize";
   public static final String SERVER_STALE_CONFIG_CACHE_ENABLED_KEY = "server.cache.isStale.enabled";
   public static final String SERVER_PERSISTENCE_TYPE_KEY = "server.persistence.type";
@@ -397,7 +401,9 @@ public class Configuration {
   private static final String LDAP_ADMIN_GROUP_MAPPING_RULES_DEFAULT = "Ambari Administrators";
   private static final String LDAP_GROUP_SEARCH_FILTER_DEFAULT = "";
   private static final String LDAP_REFERRAL_DEFAULT = "follow";
-
+  private static final String LDAP_SYNC_MEMBER_REPLACE_PATTERN_DEFAULT = "";
+  private static final String LDAP_SYNC_USER_MEMBER_FILTER_DEFAULT = "";
+  private static final String LDAP_SYNC_GROUP_MEMBER_FILTER_DEFAULT = "";
   /**
    * !!! TODO: for development purposes only, should be changed to 'false'
    */
@@ -1448,6 +1454,14 @@ public class Configuration {
         LDAP_GROUP_SEARCH_FILTER_KEY, LDAP_GROUP_SEARCH_FILTER_DEFAULT));
     ldapServerProperties.setReferralMethod(properties.getProperty(
       LDAP_REFERRAL_KEY, LDAP_REFERRAL_DEFAULT));
+    ldapServerProperties.setSyncUserMemberReplacePattern(properties.getProperty(
+      LDAP_SYCN_USER_MEMBER_REPLACE_PATTERN, LDAP_SYNC_MEMBER_REPLACE_PATTERN_DEFAULT));
+    ldapServerProperties.setSyncGroupMemberReplacePattern(properties.getProperty(
+      LDAP_SYCN_GROUP_MEMBER_REPLACE_PATTERN, LDAP_SYNC_MEMBER_REPLACE_PATTERN_DEFAULT));
+    ldapServerProperties.setSyncUserMemberFilter(properties.getProperty(
+      LDAP_SYCN_USER_MEMBER_FILTER, LDAP_SYNC_USER_MEMBER_FILTER_DEFAULT));
+    ldapServerProperties.setSyncGroupMemberFilter(properties.getProperty(
+      LDAP_SYCN_GROUP_MEMBER_FILTER, LDAP_SYNC_GROUP_MEMBER_FILTER_DEFAULT));
     ldapServerProperties.setPaginationEnabled("true".equalsIgnoreCase(
       properties.getProperty(LDAP_PAGINATION_ENABLED_KEY, LDAP_PAGINATION_ENABLED_DEFAULT)));
 
