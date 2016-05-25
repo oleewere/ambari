@@ -57,6 +57,7 @@ public class LdapServerProperties {
 
   //LDAP pagination properties
   private boolean paginationEnabled = true;
+  private String adminGroupMembershipAttr;
 
   public List<String> getLdapUrls() {
     String protocol = useSsl ? "ldaps://" : "ldap://";
@@ -247,6 +248,14 @@ public class LdapServerProperties {
     this.paginationEnabled = paginationEnabled;
   }
 
+  public String getAdminGroupMembershipAttr() {
+    return adminGroupMembershipAttr;
+  }
+
+  public void setAdminGroupMembershipAttr(String adminGroupMembershipAttr) {
+    this.adminGroupMembershipAttr = adminGroupMembershipAttr;
+  }
+
   @Override
   public boolean equals(Object obj) {
     if (this == obj) return true;
@@ -288,6 +297,9 @@ public class LdapServerProperties {
 
     if (paginationEnabled != that.isPaginationEnabled()) return false;
 
+    if (adminGroupMembershipAttr != null ? !adminGroupMembershipAttr.equals(
+      that.adminGroupMembershipAttr) : that.adminGroupMembershipAttr != null) return false;
+
     return true;
   }
 
@@ -311,7 +323,7 @@ public class LdapServerProperties {
     result = 31 * result + (groupSearchFilter != null ? groupSearchFilter.hashCode() : 0);
     result = 31 * result + (dnAttribute != null ? dnAttribute.hashCode() : 0);
     result = 31 * result + (referralMethod != null ? referralMethod.hashCode() : 0);
+    result = 31 * result + (adminGroupMembershipAttr != null ? adminGroupMembershipAttr.hashCode() : 0);
     return result;
   }
-
 }

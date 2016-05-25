@@ -68,7 +68,7 @@ public class AmbariLdapBindAuthenticator extends BindAuthenticator {
     String baseDn = ldapServerProperties.getBaseDN().toLowerCase();
     String groupBase = ldapServerProperties.getGroupBase().toLowerCase();
     String groupObjectClass = ldapServerProperties.getGroupObjectClass();
-    String groupMembershipAttr = ldapServerProperties.getGroupMembershipAttr();
+    String adminGroupMembershipAttr = ldapServerProperties.getAdminGroupMembershipAttr();
     String adminGroupMappingRules =
         ldapServerProperties.getAdminGroupMappingRules();
     final String groupNamingAttribute =
@@ -82,7 +82,7 @@ public class AmbariLdapBindAuthenticator extends BindAuthenticator {
     StringBuilder filterBuilder = new StringBuilder();
 
     filterBuilder.append("(&(");
-    filterBuilder.append(groupMembershipAttr);
+    filterBuilder.append(adminGroupMembershipAttr);
     filterBuilder.append("=");
     filterBuilder.append(user.getNameInNamespace());//DN
 

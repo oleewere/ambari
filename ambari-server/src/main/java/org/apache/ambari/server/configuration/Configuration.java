@@ -173,6 +173,7 @@ public class Configuration {
   public static final String LDAP_GROUP_NAMING_ATTR_KEY = "authentication.ldap.groupNamingAttr";
   public static final String LDAP_GROUP_MEMEBERSHIP_ATTR_KEY = "authentication.ldap.groupMembershipAttr";
   public static final String LDAP_ADMIN_GROUP_MAPPING_RULES_KEY = "authorization.ldap.adminGroupMappingRules";
+  public static final String LDAP_ADMIN_GROUP_NAMING_ATTR_KEY = "authentication.ldap.admin.groupNamingAttr";
   public static final String LDAP_GROUP_SEARCH_FILTER_KEY = "authorization.ldap.groupSearchFilter";
   public static final String LDAP_REFERRAL_KEY = "authentication.ldap.referral";
   public static final String LDAP_PAGINATION_ENABLED_KEY = "authentication.ldap.pagination.enabled";
@@ -1448,6 +1449,8 @@ public class Configuration {
       LDAP_REFERRAL_KEY, LDAP_REFERRAL_DEFAULT));
     ldapServerProperties.setPaginationEnabled("true".equalsIgnoreCase(
       properties.getProperty(LDAP_PAGINATION_ENABLED_KEY, LDAP_PAGINATION_ENABLED_DEFAULT)));
+    ldapServerProperties.setAdminGroupMembershipAttr(properties.getProperty(LDAP_ADMIN_GROUP_NAMING_ATTR_KEY,
+      ldapServerProperties.getGroupMembershipAttr()));
 
     if (properties.containsKey(LDAP_GROUP_BASE_KEY) ||
         properties.containsKey(LDAP_GROUP_OBJECT_CLASS_KEY) ||
