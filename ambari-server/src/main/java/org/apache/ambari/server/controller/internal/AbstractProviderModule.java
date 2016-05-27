@@ -43,8 +43,8 @@ import org.apache.ambari.server.controller.HostResponse;
 import org.apache.ambari.server.controller.ServiceComponentHostRequest;
 import org.apache.ambari.server.controller.ServiceComponentHostResponse;
 import org.apache.ambari.server.controller.jmx.JMXHostProvider;
-import org.apache.ambari.server.controller.jmx.JMXPropertyProvider;
 import org.apache.ambari.server.controller.metrics.MetricHostProvider;
+import org.apache.ambari.server.controller.metrics.MetricPropertyProviderFactory;
 import org.apache.ambari.server.controller.metrics.MetricsPropertyProvider;
 import org.apache.ambari.server.controller.metrics.MetricsReportPropertyProvider;
 import org.apache.ambari.server.controller.metrics.MetricsServiceProvider;
@@ -121,6 +121,7 @@ public abstract class AbstractProviderModule implements ProviderModule,
     componentServiceMap.put("DATANODE", Service.Type.HDFS);
     componentServiceMap.put("JOURNALNODE", Service.Type.HDFS);
     componentServiceMap.put("HBASE_MASTER", Service.Type.HBASE);
+    componentServiceMap.put("HBASE_REGIONSERVER", Service.Type.HBASE);
     componentServiceMap.put("RESOURCEMANAGER", Service.Type.YARN);
     componentServiceMap.put("NODEMANAGER", Service.Type.YARN);
     componentServiceMap.put("HISTORYSERVER", Service.Type.MAPREDUCE2);
@@ -138,6 +139,7 @@ public abstract class AbstractProviderModule implements ProviderModule,
 
     initPropMap = new HashMap<String, String[]>();
     initPropMap.put("HBASE_MASTER", new String[]{"hbase.master.info.port"});
+    initPropMap.put("HBASE_REGIONSERVER", new String[]{"hbase.regionserver.info.port"});
     serviceDesiredProperties.put(Service.Type.HBASE, initPropMap);
 
     initPropMap = new HashMap<String, String[]>();
@@ -192,6 +194,13 @@ public abstract class AbstractProviderModule implements ProviderModule,
   TimelineMetricCacheProvider metricCacheProvider;
 
   /**
+   * A factory used to retrieve Guice-injected instances of a metric
+   * {@link PropertyProvider}.
+   */
+  @Inject
+  private MetricPropertyProviderFactory metricPropertyProviderFactory;
+
+  /**
    * The map of host components.
    */
   private Map<String, Map<String, String>> clusterHostComponentMap;
@@ -227,8 +236,13 @@ public abstract class AbstractProviderModule implements ProviderModule,
     if (managementController == null) {
       managementController = AmbariServer.getController();
     }
+
     if (metricCacheProvider == null && managementController != null) {
       metricCacheProvider = managementController.getTimelineMetricCacheProvider();
+    }
+
+    if (metricPropertyProviderFactory == null && managementController != null) {
+      metricPropertyProviderFactory = managementController.getMetricPropertyProviderFactory();
     }
   }
 
@@ -1056,7 +1070,8 @@ public abstract class AbstractProviderModule implements ProviderModule,
                                                      String componentNamePropertyId,
                                                      String statePropertyId) {
 
-    return new JMXPropertyProvider(PropertyHelper.getJMXPropertyIds(type), streamProvider,
+    return metricPropertyProviderFactory.createJMXPropertyProvider(
+        PropertyHelper.getJMXPropertyIds(type), streamProvider,
         jmxHostProvider, metricsHostProvider, clusterNamePropertyId, hostNamePropertyId,
         componentNamePropertyId, statePropertyId);
   }
@@ -1173,7 +1188,7 @@ public abstract class AbstractProviderModule implements ProviderModule,
   }
 
   private String getJMXProtocolString(String value) {
-    if (value.equals(PROPERTY_HDFS_HTTP_POLICY_VALUE_HTTPS_ONLY)) {
+    if (PROPERTY_HDFS_HTTP_POLICY_VALUE_HTTPS_ONLY.equals(value)) {
       return "https";
     } else {
       return "http";

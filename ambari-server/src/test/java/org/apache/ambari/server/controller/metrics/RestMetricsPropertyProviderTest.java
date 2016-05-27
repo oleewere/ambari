@@ -45,8 +45,10 @@ import org.apache.ambari.server.orm.InMemoryDefaultTestModule;
 import org.apache.ambari.server.state.Cluster;
 import org.apache.ambari.server.state.Clusters;
 import org.apache.ambari.server.state.StackId;
+import org.apache.ambari.server.state.services.MetricsRetrievalService;
 import org.apache.ambari.server.state.stack.Metric;
 import org.apache.ambari.server.state.stack.MetricDefinition;
+import org.apache.ambari.server.utils.SynchronousThreadPoolExecutor;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -96,6 +98,12 @@ public class RestMetricsPropertyProviderTest {
     clusters.addCluster("c1", new StackId("HDP-2.1.1"));
     c1 = clusters.getCluster("c1");
     JMXPropertyProvider.init(injector.getInstance(Configuration.class));
+
+    MetricsRetrievalService metricsRetrievalService = injector.getInstance(
+        MetricsRetrievalService.class);
+
+    metricsRetrievalService.start();
+    metricsRetrievalService.setThreadPoolExecutor(new SynchronousThreadPoolExecutor());
   }
 
   @Test
@@ -112,8 +120,8 @@ public class RestMetricsPropertyProviderTest {
     TestStreamProvider streamProvider = new TestStreamProvider();
     TestMetricsHostProvider metricsHostProvider = new TestMetricsHostProvider();
 
-    RestMetricsPropertyProvider restMetricsPropertyProvider = new RestMetricsPropertyProvider(
-        injector,
+    MetricPropertyProviderFactory factory = injector.getInstance(MetricPropertyProviderFactory.class);
+    RestMetricsPropertyProvider restMetricsPropertyProvider = factory.createRESTMetricsPropertyProvider(
         metricDefinition.getProperties(),
         componentMetrics,
         streamProvider,
@@ -164,8 +172,8 @@ public class RestMetricsPropertyProviderTest {
     TestStreamProvider streamProvider = new TestStreamProvider();
     TestMetricsHostProvider metricsHostProvider = new TestMetricsHostProvider();
 
-    RestMetricsPropertyProvider restMetricsPropertyProvider = new RestMetricsPropertyProvider(
-        injector,
+    MetricPropertyProviderFactory factory = injector.getInstance(MetricPropertyProviderFactory.class);
+    RestMetricsPropertyProvider restMetricsPropertyProvider = factory.createRESTMetricsPropertyProvider(
         metricDefinition.getProperties(),
         componentMetrics,
         streamProvider,
@@ -206,8 +214,8 @@ public class RestMetricsPropertyProviderTest {
     TestStreamProvider streamProvider = new TestStreamProvider();
     TestMetricsHostProvider metricsHostProvider = new TestMetricsHostProvider();
 
-    RestMetricsPropertyProvider restMetricsPropertyProvider = new RestMetricsPropertyProvider(
-        injector,
+    MetricPropertyProviderFactory factory = injector.getInstance(MetricPropertyProviderFactory.class);
+    RestMetricsPropertyProvider restMetricsPropertyProvider = factory.createRESTMetricsPropertyProvider(
         metricDefinition.getProperties(),
         componentMetrics,
         streamProvider,
@@ -252,8 +260,8 @@ public class RestMetricsPropertyProviderTest {
     TestStreamProvider streamProvider = new TestStreamProvider();
     TestMetricsHostProvider metricsHostProvider = new TestMetricsHostProvider();
 
-    RestMetricsPropertyProvider restMetricsPropertyProvider = new RestMetricsPropertyProvider(
-        injector,
+    MetricPropertyProviderFactory factory = injector.getInstance(MetricPropertyProviderFactory.class);
+    RestMetricsPropertyProvider restMetricsPropertyProvider = factory.createRESTMetricsPropertyProvider(
         metricDefinition.getProperties(),
         componentMetrics,
         streamProvider,
@@ -296,8 +304,8 @@ public class RestMetricsPropertyProviderTest {
 
     Set<Resource> resources = new HashSet<Resource>();
 
-    RestMetricsPropertyProvider restMetricsPropertyProvider = new RestMetricsPropertyProvider(
-        injector,
+    MetricPropertyProviderFactory factory = injector.getInstance(MetricPropertyProviderFactory.class);
+    RestMetricsPropertyProvider restMetricsPropertyProvider = factory.createRESTMetricsPropertyProvider(
         metricDefinition.getProperties(),
         componentMetrics,
         streamProvider,
@@ -351,8 +359,8 @@ public class RestMetricsPropertyProviderTest {
 
     Set<Resource> resources = new HashSet<Resource>();
 
-    RestMetricsPropertyProvider restMetricsPropertyProvider = new RestMetricsPropertyProvider(
-        injector,
+    MetricPropertyProviderFactory factory = injector.getInstance(MetricPropertyProviderFactory.class);
+    RestMetricsPropertyProvider restMetricsPropertyProvider = factory.createRESTMetricsPropertyProvider(
         metricDefinition.getProperties(),
         componentMetrics,
         streamProvider,

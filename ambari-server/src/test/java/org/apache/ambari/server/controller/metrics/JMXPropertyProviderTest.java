@@ -35,8 +35,9 @@ import org.apache.ambari.server.controller.spi.Resource;
 import org.apache.ambari.server.controller.spi.SystemException;
 import org.apache.ambari.server.controller.spi.TemporalInfo;
 import org.apache.ambari.server.controller.utilities.PropertyHelper;
-import org.apache.ambari.server.orm.GuiceJpaInitializer;
 import org.apache.ambari.server.orm.InMemoryDefaultTestModule;
+import org.apache.ambari.server.state.services.MetricsRetrievalService;
+import org.apache.ambari.server.utils.SynchronousThreadPoolExecutor;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -53,11 +54,20 @@ public class JMXPropertyProviderTest {
   protected static final String HOST_COMPONENT_STATE_PROPERTY_ID = PropertyHelper.getPropertyId("HostRoles", "state");
 
   public static final int NUMBER_OF_RESOURCES = 400;
+  private static MetricPropertyProviderFactory metricPropertyProviderFactory;
 
   @BeforeClass
   public static void setupClass() {
     Injector injector = Guice.createInjector(new InMemoryDefaultTestModule());
     JMXPropertyProvider.init(injector.getInstance(Configuration.class));
+
+    metricPropertyProviderFactory = injector.getInstance(MetricPropertyProviderFactory.class);
+
+    MetricsRetrievalService metricsRetrievalService = injector.getInstance(
+        MetricsRetrievalService.class);
+
+    metricsRetrievalService.start();
+    metricsRetrievalService.setThreadPoolExecutor(new SynchronousThreadPoolExecutor());
   }
 
   @Test
@@ -65,8 +75,7 @@ public class JMXPropertyProviderTest {
     TestStreamProvider  streamProvider = new TestStreamProvider();
     TestJMXHostProvider hostProvider = new TestJMXHostProvider(false);
     TestMetricHostProvider metricsHostProvider = new TestMetricHostProvider();
-
-    JMXPropertyProvider propertyProvider = new JMXPropertyProvider(
+    JMXPropertyProvider propertyProvider = metricPropertyProviderFactory.createJMXPropertyProvider(
         PropertyHelper.getJMXPropertyIds(Resource.Type.HostComponent),
         streamProvider,
         hostProvider,
@@ -162,7 +171,7 @@ public class JMXPropertyProviderTest {
     TestJMXHostProvider hostProvider = new TestJMXHostProvider(false);
     TestMetricHostProvider metricsHostProvider = new TestMetricHostProvider();
 
-    JMXPropertyProvider propertyProvider = new JMXPropertyProvider(
+    JMXPropertyProvider propertyProvider = metricPropertyProviderFactory.createJMXPropertyProvider(
         PropertyHelper.getJMXPropertyIds(Resource.Type.HostComponent),
         streamProvider,
         hostProvider,
@@ -198,7 +207,7 @@ public class JMXPropertyProviderTest {
     TestJMXHostProvider hostProvider = new TestJMXHostProvider(false);
     TestMetricHostProvider metricsHostProvider = new TestMetricHostProvider();
 
-    JMXPropertyProvider propertyProvider = new JMXPropertyProvider(
+    JMXPropertyProvider propertyProvider = metricPropertyProviderFactory.createJMXPropertyProvider(
         PropertyHelper.getJMXPropertyIds(Resource.Type.HostComponent),
         streamProvider,
         hostProvider,
@@ -236,7 +245,7 @@ public class JMXPropertyProviderTest {
     TestJMXHostProvider hostProvider = new TestJMXHostProvider(true);
     TestMetricHostProvider metricsHostProvider = new TestMetricHostProvider();
 
-    JMXPropertyProvider propertyProvider = new JMXPropertyProvider(
+    JMXPropertyProvider propertyProvider = metricPropertyProviderFactory.createJMXPropertyProvider(
         PropertyHelper.getJMXPropertyIds(Resource.Type.HostComponent),
         streamProvider,
         hostProvider,
@@ -274,7 +283,7 @@ public class JMXPropertyProviderTest {
     TestJMXHostProvider hostProvider = new TestJMXHostProvider(true);
     TestMetricHostProvider metricsHostProvider = new TestMetricHostProvider();
 
-    JMXPropertyProvider propertyProvider = new JMXPropertyProvider(
+    JMXPropertyProvider propertyProvider = metricPropertyProviderFactory.createJMXPropertyProvider(
         PropertyHelper.getJMXPropertyIds(Resource.Type.HostComponent),
         streamProvider,
         hostProvider,
@@ -308,7 +317,7 @@ public class JMXPropertyProviderTest {
     TestMetricHostProvider metricsHostProvider = new TestMetricHostProvider();
     Set<Resource> resources = new HashSet<Resource>();
 
-    JMXPropertyProvider propertyProvider = new JMXPropertyProvider(
+    JMXPropertyProvider propertyProvider = metricPropertyProviderFactory.createJMXPropertyProvider(
         PropertyHelper.getJMXPropertyIds(Resource.Type.HostComponent),
         streamProvider,
         hostProvider,
@@ -354,7 +363,7 @@ public class JMXPropertyProviderTest {
     TestMetricHostProvider metricsHostProvider = new TestMetricHostProvider();
     Set<Resource> resources = new HashSet<Resource>();
 
-    JMXPropertyProvider propertyProvider = new JMXPropertyProvider(
+    JMXPropertyProvider propertyProvider = metricPropertyProviderFactory.createJMXPropertyProvider(
         PropertyHelper.getJMXPropertyIds(Resource.Type.HostComponent),
         streamProvider,
         hostProvider,
@@ -418,18 +427,20 @@ public class JMXPropertyProviderTest {
         return null;
       }
 
-      if (componentName.equals("NAMENODE"))
+      if (componentName.equals("NAMENODE")) {
         return "50070";
-      else if (componentName.equals("DATANODE"))
+      } else if (componentName.equals("DATANODE")) {
         return "50075";
-      else if (componentName.equals("HBASE_MASTER"))
+      } else if (componentName.equals("HBASE_MASTER")) {
         return null == clusterName ? "60010" : "60011";
-      else  if (componentName.equals("JOURNALNODE"))
+      }
+      else  if (componentName.equals("JOURNALNODE")) {
         return "8480";
-      else  if (componentName.equals("STORM_REST_API"))
+      } else  if (componentName.equals("STORM_REST_API")) {
         return "8745";
-      else
+      } else {
         return null;
+      }
     }
 
     @Override

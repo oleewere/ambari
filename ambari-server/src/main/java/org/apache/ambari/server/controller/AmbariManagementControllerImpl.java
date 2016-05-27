@@ -90,6 +90,7 @@ import org.apache.ambari.server.controller.internal.RequestStageContainer;
 import org.apache.ambari.server.controller.internal.URLStreamProvider;
 import org.apache.ambari.server.controller.internal.WidgetLayoutResourceProvider;
 import org.apache.ambari.server.controller.internal.WidgetResourceProvider;
+import org.apache.ambari.server.controller.metrics.MetricPropertyProviderFactory;
 import org.apache.ambari.server.controller.metrics.timeline.cache.TimelineMetricCacheProvider;
 import org.apache.ambari.server.controller.spi.Resource;
 import org.apache.ambari.server.customactions.ActionDefinition;
@@ -4447,6 +4448,14 @@ public class AmbariManagementControllerImpl implements AmbariManagementControlle
   @Override
   public TimelineMetricCacheProvider getTimelineMetricCacheProvider() {
     return injector.getInstance(TimelineMetricCacheProvider.class);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public MetricPropertyProviderFactory getMetricPropertyProviderFactory() {
+    return injector.getInstance(MetricPropertyProviderFactory.class);
   }
 
   @Override

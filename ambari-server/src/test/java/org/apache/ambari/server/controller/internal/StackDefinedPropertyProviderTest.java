@@ -20,17 +20,11 @@ package org.apache.ambari.server.controller.internal;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.google.inject.Binder;
-import com.google.inject.Module;
-import com.google.inject.util.Modules;
 
 import org.apache.ambari.server.configuration.ComponentSSLConfiguration;
 import org.apache.ambari.server.configuration.Configuration;
@@ -50,7 +44,6 @@ import org.apache.ambari.server.controller.spi.Resource;
 import org.apache.ambari.server.controller.spi.SystemException;
 import org.apache.ambari.server.controller.spi.TemporalInfo;
 import org.apache.ambari.server.controller.utilities.PropertyHelper;
-import org.apache.ambari.server.controller.utilities.StreamProvider;
 import org.apache.ambari.server.orm.GuiceJpaInitializer;
 import org.apache.ambari.server.orm.InMemoryDefaultTestModule;
 import org.apache.ambari.server.orm.OrmTestHelper;
@@ -59,17 +52,21 @@ import org.apache.ambari.server.state.Clusters;
 import org.apache.ambari.server.state.Host;
 import org.apache.ambari.server.state.RepositoryVersionState;
 import org.apache.ambari.server.state.StackId;
+import org.apache.ambari.server.state.services.MetricsRetrievalService;
 import org.apache.ambari.server.state.stack.Metric;
+import org.apache.ambari.server.utils.SynchronousThreadPoolExecutor;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Module;
 import com.google.inject.persist.PersistService;
-
+import com.google.inject.util.Modules;
 /**
  * Tests the stack defined property provider.
  */
@@ -109,6 +106,12 @@ public class StackDefinedPropertyProviderTest {
     injector = Guice.createInjector(Modules.override(module).with(new TestModuleWithCacheProvider()));
     injector.getInstance(GuiceJpaInitializer.class);
     StackDefinedPropertyProvider.init(injector);
+
+    MetricsRetrievalService metricsRetrievalService = injector.getInstance(
+        MetricsRetrievalService.class);
+
+    metricsRetrievalService.start();
+    metricsRetrievalService.setThreadPoolExecutor(new SynchronousThreadPoolExecutor());
 
     helper = injector.getInstance(OrmTestHelper.class);
 
