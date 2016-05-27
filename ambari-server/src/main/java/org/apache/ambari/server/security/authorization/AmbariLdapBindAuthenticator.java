@@ -68,7 +68,7 @@ public class AmbariLdapBindAuthenticator extends BindAuthenticator {
     String baseDn = ldapServerProperties.getBaseDN().toLowerCase();
     String groupBase = ldapServerProperties.getGroupBase().toLowerCase();
     String groupObjectClass = ldapServerProperties.getGroupObjectClass();
-    String groupMembershipAttr = ldapServerProperties.getGroupMembershipAttr();
+    String groupMembershipAttr = "member";
     String adminGroupMappingRules =
         ldapServerProperties.getAdminGroupMappingRules();
     final String groupNamingAttribute =
