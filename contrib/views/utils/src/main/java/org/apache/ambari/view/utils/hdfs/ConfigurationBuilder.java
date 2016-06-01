@@ -235,6 +235,7 @@ public class ConfigurationBuilder {
     conf.set("fs.file.impl", LocalFileSystem.class.getName());
 
     configureWASB();
+    configureADL();
 
     return conf;
   }
@@ -253,6 +254,18 @@ public class ConfigurationBuilder {
       copyPropertyIfExists(CORE_SITE, "fs.azure.account.key." + account);
       copyPropertyIfExists(CORE_SITE, "fs.azure.account.keyprovider." + account);
       copyPropertyIfExists(CORE_SITE, "fs.azure.shellkeyprovider.script");
+    }
+  }
+
+  /**
+   *  Fill adl properties if adl:// scheme configured
+   */
+  public void configureADL() {
+    if (defaultFsUri.getScheme().equals("adl")) {
+      conf.set("fs.adl.impl", "com.microsoft.azure.datalake.store.AdlFileSystem");
+      copyPropertyIfExists(CORE_SITE,"dfs.webhdfs.oauth2.access.token.provider");
+      copyPropertyIfExists(CORE_SITE,"fs.azure.datalake.token.provider.service.urls");
+      copyPropertyIfExists(CORE_SITE,"fs.azure.datalake.token.provider.script");
     }
   }
 
