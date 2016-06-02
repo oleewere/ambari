@@ -78,9 +78,11 @@ def create_local_dir(dir_name):
             group=params.user_group,
             ignore_failures=True,
   )
-  Execute(("chmod", "-R", "755") + tuple(params.nm_local_dirs_list),
-          sudo=True,
-  )
+  nm_local_existing_dirs = filter(os.path.exists, params.nm_local_dirs_list) # skip broken mountpoints
+  if nm_local_existing_dirs:
+    Execute(("chmod", "-R", "755") + tuple(nm_local_existing_dirs),
+            sudo=True,
+    )
 
 @OsFamilyFuncImpl(os_family=OsFamilyImpl.DEFAULT)
 def yarn(name = None):
