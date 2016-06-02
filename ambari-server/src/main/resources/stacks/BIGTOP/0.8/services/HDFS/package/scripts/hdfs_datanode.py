@@ -18,7 +18,7 @@ limitations under the License.
 """
 
 from resource_management import *
-from resource_management.libraries.functions.dfs_datanode_helper import handle_dfs_data_dir
+from resource_management.libraries.functions.mounted_dirs_helper import handle_dfs_data_dir
 from utils import service
 
 

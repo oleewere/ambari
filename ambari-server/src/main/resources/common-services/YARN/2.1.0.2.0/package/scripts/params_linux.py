@@ -178,6 +178,9 @@ if hostname and nm_address and nm_address.startswith("0.0.0.0:"):
 nm_local_dirs = config['configurations']['yarn-site']['yarn.nodemanager.local-dirs']
 nm_log_dirs = config['configurations']['yarn-site']['yarn.nodemanager.log-dirs']
 
+nm_log_dir_to_mount_file = "/var/lib/ambari-agent/data/yarn/yarn_log_dir_mount.hist"
+nm_local_dir_to_mount_file = "/var/lib/ambari-agent/data/yarn/yarn_local_dir_mount.hist"
+
 nm_local_dirs_list = nm_local_dirs.split(',')
 nm_log_dirs_list = nm_log_dirs.split(',')
 

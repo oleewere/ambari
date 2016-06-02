@@ -23,7 +23,7 @@ from mock.mock import MagicMock, patch
 from resource_management.libraries.script import Script
 from resource_management.core import shell
 from resource_management.core.exceptions import Fail
-import resource_management.libraries.functions.dfs_datanode_helper
+import resource_management.libraries.functions.mounted_dirs_helper
 
 
 class TestDatanode(RMFTestCase):
@@ -327,8 +327,6 @@ class TestDatanode(RMFTestCase):
                               recursive = True,
                               )
     self.assertResourceCalled('Directory', '/var/lib/ambari-agent/data/datanode',
-                              owner = 'hdfs',
-                              group = 'hadoop',
                               mode = 0755,
                               recursive = True
     )
@@ -340,7 +338,7 @@ class TestDatanode(RMFTestCase):
                               recursive = True,
                               cd_access='a'
                               )
-    content = resource_management.libraries.functions.dfs_datanode_helper.DATA_DIR_TO_MOUNT_HEADER
+    content = resource_management.libraries.functions.mounted_dirs_helper.DIR_TO_MOUNT_HEADER
     self.assertResourceCalled('File', '/var/lib/ambari-agent/data/datanode/dfs_data_dir_mount.hist',
                               owner = 'hdfs',
                               group = 'hadoop',
@@ -405,8 +403,6 @@ class TestDatanode(RMFTestCase):
                               recursive = True,
                               )
     self.assertResourceCalled('Directory', '/var/lib/ambari-agent/data/datanode',
-                              owner = 'hdfs',
-                              group = 'hadoop',
                               mode = 0755,
                               recursive = True
     )
@@ -418,7 +414,7 @@ class TestDatanode(RMFTestCase):
                               recursive = True,
                               cd_access='a'
                               )
-    content = resource_management.libraries.functions.dfs_datanode_helper.DATA_DIR_TO_MOUNT_HEADER
+    content = resource_management.libraries.functions.mounted_dirs_helper.DIR_TO_MOUNT_HEADER
     self.assertResourceCalled('File', '/var/lib/ambari-agent/data/datanode/dfs_data_dir_mount.hist',
                               owner = 'hdfs',
                               group = 'hadoop',

@@ -20,8 +20,9 @@ import logging
 from unittest import TestCase
 from mock.mock import Mock, MagicMock, patch
 
-from resource_management.libraries.functions import dfs_datanode_helper
+from resource_management.libraries.functions import mounted_dirs_helper
 from resource_management.core.logger import Logger
+from resource_management.libraries.script.script import Script
 
 
 class StubParams(object):
@@ -41,16 +42,17 @@ class StubParams(object):
     return "<StubParams: {0}; mocks: {1}>".format(name, str(mocks))
 
 
-def fake_create_dir(directory, other):
+def fake_create_dir(directory):
   """
   Fake function used as function pointer.
   """
   print "Fake function to create directory {0}".format(directory)
 
 
+@patch.object(Script, "get_config", new=MagicMock(return_value={'configurations':{'cluster-env': {'ignore_bad_mounts': False}}}))
 class TestDatanodeHelper(TestCase):
   """
-  Test the functionality of the dfs_datanode_helper.py
+  Test the functionality of the mounted_dirs_helper.py
   """
   logger = logging.getLogger('TestDatanodeHelper')
 
@@ -63,9 +65,11 @@ class TestDatanodeHelper(TestCase):
   params.dfs_data_dir = "{0},{1},{2}".format(grid0, grid1, grid2)
 
 
+  @patch("resource_management.libraries.functions.mounted_dirs_helper.Directory")
+  @patch.object(Logger, "warning")
   @patch.object(Logger, "info")
   @patch.object(Logger, "error")
-  def test_normalized(self, log_error, log_info):
+  def test_normalized(self, log_error, log_info, warning_info, dir_mock):
     """
     Test that the data dirs are normalized by removing leading and trailing whitespace, and case sensitive.
     """
@@ -74,7 +78,7 @@ class TestDatanodeHelper(TestCase):
     params.dfs_data_dir = "/grid/0/data  ,  /grid/1/data  ,/GRID/2/Data/"
 
     # Function under test
-    dfs_datanode_helper.handle_dfs_data_dir(fake_create_dir, params, update_cache=False)
+    mounted_dirs_helper.handle_mounted_dirs(fake_create_dir, params.dfs_data_dir, params.data_dir_mount_file, update_cache=False)
 
     for (name, args, kwargs) in log_info.mock_calls:
       print args[0]
@@ -87,28 +91,27 @@ class TestDatanodeHelper(TestCase):
 
     self.assertEquals(0, log_error.call_count)
 
+  @patch("resource_management.libraries.functions.mounted_dirs_helper.Directory")
   @patch.object(Logger, "info")
   @patch.object(Logger, "error")
-  @patch.object(dfs_datanode_helper, "get_data_dir_to_mount_from_file")
-  @patch.object(dfs_datanode_helper, "get_mount_point_for_dir")
+  @patch.object(mounted_dirs_helper, "get_dir_to_mount_from_file")
+  @patch.object(mounted_dirs_helper, "get_mount_point_for_dir")
   @patch.object(os.path, "isdir")
   @patch.object(os.path, "exists")
-  def test_grid_becomes_unmounted(self, mock_os_exists, mock_os_isdir, mock_get_mount_point, mock_get_data_dir_to_mount_from_file, log_error, log_info):
+  def test_grid_becomes_unmounted(self, mock_os_exists, mock_os_isdir, mock_get_mount_point, mock_get_dir_to_mount_from_file, log_error, log_info, dir_mock):
     """
     Test when grid2 becomes unmounted
     """
     mock_os_exists.return_value = True    # Indicate that history file exists
 
     # Initially, all grids were mounted
-    mock_get_data_dir_to_mount_from_file.return_value = {self.grid0: "/dev0", self.grid1: "/dev1", self.grid2: "/dev2"}
+    mock_get_dir_to_mount_from_file.return_value = {self.grid0: "/dev0", self.grid1: "/dev1", self.grid2: "/dev2"}
 
     # Grid2 then becomes unmounted
     mock_get_mount_point.side_effect = ["/dev0", "/dev1", "/"] * 2
     mock_os_isdir.side_effect = [False, False, False] + [True, True, True]
-
     # Function under test
-    dfs_datanode_helper.handle_dfs_data_dir(fake_create_dir, self.params, update_cache=False)
-
+    mounted_dirs_helper.handle_mounted_dirs(fake_create_dir, self.params.dfs_data_dir, self.params.data_dir_mount_file, update_cache=False)
     for (name, args, kwargs) in log_info.mock_calls:
       print args[0]
 
@@ -121,27 +124,28 @@ class TestDatanodeHelper(TestCase):
     self.assertEquals(1, log_error.call_count)
     self.assertTrue("Directory /grid/2/data does not exist and became unmounted from /dev2" in error_msg)
 
+  @patch("resource_management.libraries.functions.mounted_dirs_helper.Directory")
   @patch.object(Logger, "info")
   @patch.object(Logger, "error")
-  @patch.object(dfs_datanode_helper, "get_data_dir_to_mount_from_file")
-  @patch.object(dfs_datanode_helper, "get_mount_point_for_dir")
+  @patch.object(mounted_dirs_helper, "get_dir_to_mount_from_file")
+  @patch.object(mounted_dirs_helper, "get_mount_point_for_dir")
   @patch.object(os.path, "isdir")
   @patch.object(os.path, "exists")
-  def test_grid_becomes_remounted(self, mock_os_exists, mock_os_isdir, mock_get_mount_point, mock_get_data_dir_to_mount_from_file, log_error, log_info):
+  def test_grid_becomes_remounted(self, mock_os_exists, mock_os_isdir, mock_get_mount_point, mock_get_dir_to_mount_from_file, log_error, log_info, dir_mock):
     """
     Test when grid2 becomes remounted
     """
     mock_os_exists.return_value = True    # Indicate that history file exists
 
     # Initially, all grids were mounted
-    mock_get_data_dir_to_mount_from_file.return_value = {self.grid0: "/dev0", self.grid1: "/dev1", self.grid2: "/"}
+    mock_get_dir_to_mount_from_file.return_value = {self.grid0: "/dev0", self.grid1: "/dev1", self.grid2: "/"}
 
     # Grid2 then becomes remounted
     mock_get_mount_point.side_effect = ["/dev0", "/dev1", "/dev2"] * 2
     mock_os_isdir.side_effect = [False, False, False] + [True, True, True]
 
     # Function under test
-    dfs_datanode_helper.handle_dfs_data_dir(fake_create_dir, self.params, update_cache=False)
+    mounted_dirs_helper.handle_mounted_dirs(fake_create_dir, self.params.data_dir_mount_file, self.params.data_dir_mount_file, update_cache=False)
 
     for (name, args, kwargs) in log_info.mock_calls:
       print args[0]
