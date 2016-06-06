@@ -284,6 +284,7 @@ public class JMXHostProviderTest {
     yarnConfigs.put(RESOURCEMANAGER_HTTPS_PORT, "8090");
     yarnConfigs.put(YARN_HTTPS_POLICY, "HTTPS_ONLY");
 
+
     ConfigurationRequest cr1 = new ConfigurationRequest(clusterName,
       "hdfs-site", "versionN", configs, null);
 
@@ -298,6 +299,7 @@ public class JMXHostProviderTest {
       "yarn-site", "versionN", yarnConfigs, null);
     crReq.setDesiredConfig(Collections.singletonList(cr2));
     controller.updateClusters(Collections.singleton(crReq), null);
+
 
     Assert.assertEquals("versionN", cluster.getDesiredConfigByType("yarn-site")
       .getTag());
@@ -383,7 +385,7 @@ public class JMXHostProviderTest {
 
     createHDFSServiceConfigs(true);
 
-    JMXHostProviderModule providerModule = new JMXHostProviderModule();
+    JMXHostProviderModule providerModule = new JMXHostProviderModule(controller);
     providerModule.registerResourceProvider(Resource.Type.Service);
     providerModule.registerResourceProvider(Resource.Type.Configuration);
     // Non default port addresses
@@ -403,7 +405,7 @@ public class JMXHostProviderTest {
 
     createHDFSServiceConfigs(false);
 
-    JMXHostProviderModule providerModule = new JMXHostProviderModule();
+    JMXHostProviderModule providerModule = new JMXHostProviderModule(controller);
     providerModule.registerResourceProvider(Resource.Type.Service);
     providerModule.registerResourceProvider(Resource.Type.Configuration);
     // Non default port addresses
@@ -423,7 +425,7 @@ public class JMXHostProviderTest {
 
     createConfigsNameNodeHa();
 
-    JMXHostProviderModule providerModule = new JMXHostProviderModule();
+    JMXHostProviderModule providerModule = new JMXHostProviderModule(controller);
     providerModule.registerResourceProvider(Resource.Type.Service);
     providerModule.registerResourceProvider(Resource.Type.Configuration);
 
@@ -440,7 +442,7 @@ public class JMXHostProviderTest {
 
     createConfigs();
 
-    JMXHostProviderModule providerModule = new JMXHostProviderModule();
+    JMXHostProviderModule providerModule = new JMXHostProviderModule(controller);
     providerModule.registerResourceProvider(Resource.Type.Cluster);
     providerModule.registerResourceProvider(Resource.Type.Configuration);
     // Non default port addresses
@@ -454,10 +456,9 @@ public class JMXHostProviderTest {
 
   @Test
   public void testGetHostNames() throws AmbariException {
-    JMXHostProviderModule providerModule = new JMXHostProviderModule();
-
-
     AmbariManagementController managementControllerMock = createNiceMock(AmbariManagementController.class);
+    JMXHostProviderModule providerModule = new JMXHostProviderModule(managementControllerMock);
+
     Clusters clustersMock = createNiceMock(Clusters.class);
     Cluster clusterMock = createNiceMock(Cluster.class);
     Service serviceMock = createNiceMock(Service.class);
@@ -474,7 +475,6 @@ public class JMXHostProviderTest {
     expect(serviceComponentMock.getServiceComponentHosts()).andReturn(hostComponents).anyTimes();
 
     replay(managementControllerMock, clustersMock, clusterMock, serviceMock, serviceComponentMock);
-    providerModule.managementController = managementControllerMock;
 
     Set<String> result = providerModule.getHostNames("c1", "DATANODE");
     Assert.assertTrue(result.iterator().next().toString().equals("host1"));
@@ -487,11 +487,12 @@ public class JMXHostProviderTest {
     ResourceAlreadyExistsException, UnsupportedPropertyException,
     SystemException, AmbariException, NoSuchResourceException {
     createConfigs();
-    JMXHostProviderModule providerModule = new JMXHostProviderModule();
+    JMXHostProviderModule providerModule = new JMXHostProviderModule(controller);
     providerModule.registerResourceProvider(Resource.Type.Cluster);
     providerModule.registerResourceProvider(Resource.Type.Configuration);
     Assert.assertEquals("https", providerModule.getJMXProtocol("c1", "RESOURCEMANAGER"));
     Assert.assertEquals("8090", providerModule.getPort("c1", "RESOURCEMANAGER", "localhost", true));
+
 
   }
 
@@ -501,7 +502,7 @@ public class JMXHostProviderTest {
     ResourceAlreadyExistsException, UnsupportedPropertyException,
     SystemException, AmbariException, NoSuchResourceException {
     createConfigs();
-    JMXHostProviderModule providerModule = new JMXHostProviderModule();
+    JMXHostProviderModule providerModule = new JMXHostProviderModule(controller);
     providerModule.registerResourceProvider(Resource.Type.Cluster);
     providerModule.registerResourceProvider(Resource.Type.Configuration);
     Assert.assertEquals("https", providerModule.getJMXProtocol("c1", "JOURNALNODE"));
@@ -516,7 +517,7 @@ public class JMXHostProviderTest {
 
     createConfigs();
 
-    JMXHostProviderModule providerModule = new JMXHostProviderModule();
+    JMXHostProviderModule providerModule = new JMXHostProviderModule(controller);
     providerModule.registerResourceProvider(Resource.Type.Cluster);
     providerModule.registerResourceProvider(Resource.Type.Configuration);
     // Non default port addresses
@@ -566,6 +567,11 @@ public class JMXHostProviderTest {
 
     ResourceProvider configResourceProvider = new ConfigurationResourceProvider(
         controller);
+
+    JMXHostProviderModule(AmbariManagementController ambariManagementController) {
+      super();
+      managementController = ambariManagementController;
+    }
 
     @Override
     protected ResourceProvider createResourceProvider(Resource.Type type) {

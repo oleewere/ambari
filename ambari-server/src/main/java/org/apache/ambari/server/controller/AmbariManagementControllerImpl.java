@@ -94,6 +94,7 @@ import org.apache.ambari.server.controller.metrics.MetricPropertyProviderFactory
 import org.apache.ambari.server.controller.metrics.timeline.cache.TimelineMetricCacheProvider;
 import org.apache.ambari.server.controller.spi.Resource;
 import org.apache.ambari.server.customactions.ActionDefinition;
+import org.apache.ambari.server.events.publishers.AmbariEventPublisher;
 import org.apache.ambari.server.metadata.ActionMetadata;
 import org.apache.ambari.server.metadata.RoleCommandOrder;
 import org.apache.ambari.server.orm.dao.ClusterDAO;
@@ -258,6 +259,8 @@ public class AmbariManagementControllerImpl implements AmbariManagementControlle
   private ClusterDAO clusterDAO;
   @Inject
   private CredentialStoreService credentialStoreService;
+  @Inject
+  private AmbariEventPublisher ambariEventPublisher;
 
   private MaintenanceStateHelper maintenanceStateHelper;
 
@@ -4456,6 +4459,14 @@ public class AmbariManagementControllerImpl implements AmbariManagementControlle
   @Override
   public MetricPropertyProviderFactory getMetricPropertyProviderFactory() {
     return injector.getInstance(MetricPropertyProviderFactory.class);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public AmbariEventPublisher getAmbariEventPublisher() {
+    return injector.getInstance(AmbariEventPublisher.class);
   }
 
   @Override

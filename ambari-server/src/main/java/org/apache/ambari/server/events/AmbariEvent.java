@@ -100,7 +100,12 @@ public abstract class AmbariEvent {
     /**
      * Received a final command report for some action
      */
-    ACTION_EXECUTION_FINISHED
+    ACTION_EXECUTION_FINISHED,
+
+    /**
+     * Cluster configuration changed.
+     */
+    CLUSTER_CONFIG_CHANGED;
   }
 
   /**
