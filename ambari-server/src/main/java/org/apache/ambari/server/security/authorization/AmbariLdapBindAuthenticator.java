@@ -19,6 +19,9 @@ package org.apache.ambari.server.security.authorization;
 
 
 import org.apache.ambari.server.configuration.Configuration;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ldap.core.AttributesMapper;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.LdapTemplate;
@@ -26,9 +29,9 @@ import org.springframework.ldap.core.support.BaseLdapPathContextSource;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.ldap.authentication.BindAuthenticator;
 
-import java.util.*;
-import javax.naming.*;
+import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
+import java.util.List;
 
 
 /**
@@ -37,9 +40,13 @@ import javax.naming.directory.Attributes;
  */
 public class AmbariLdapBindAuthenticator extends BindAuthenticator {
 
+  private static final Logger LOG = LoggerFactory.getLogger(AmbariLdapBindAuthenticator.class);
+
   private Configuration configuration;
 
   private static final String AMBARI_ADMIN_LDAP_ATTRIBUTE_KEY = "ambari_admin";
+
+  private static final String MEMBER_DN_FORMAT_ATTRIBUTE = "member";
 
   public AmbariLdapBindAuthenticator(BaseLdapPathContextSource contextSource,
                                      Configuration configuration) {
@@ -51,8 +58,12 @@ public class AmbariLdapBindAuthenticator extends BindAuthenticator {
   public DirContextOperations authenticate(Authentication authentication) {
 
     DirContextOperations user = super.authenticate(authentication);
-
-    return setAmbariAdminAttr(user);
+    LdapServerProperties ldapServerProperties =
+      configuration.getLdapServerProperties();
+    if (StringUtils.isNotEmpty(ldapServerProperties.getAdminGroupMappingRules())) {
+      user = setAmbariAdminAttr(user, ldapServerProperties);
+    }
+    return user;
   }
 
   /**
@@ -61,14 +72,11 @@ public class AmbariLdapBindAuthenticator extends BindAuthenticator {
    * @param user
    * @return
    */
-  private DirContextOperations setAmbariAdminAttr(DirContextOperations user) {
-    LdapServerProperties ldapServerProperties =
-        configuration.getLdapServerProperties();
-
+  private DirContextOperations setAmbariAdminAttr(DirContextOperations user, LdapServerProperties ldapServerProperties) {
+    String groupMembershipAttr = ldapServerProperties.getGroupMembershipAttr();
     String baseDn = ldapServerProperties.getBaseDN().toLowerCase();
     String groupBase = ldapServerProperties.getGroupBase().toLowerCase();
     String groupObjectClass = ldapServerProperties.getGroupObjectClass();
-    String groupMembershipAttr = ldapServerProperties.getGroupMembershipAttr();
     String adminGroupMappingRules =
         ldapServerProperties.getAdminGroupMappingRules();
     final String groupNamingAttribute =
@@ -79,33 +87,27 @@ public class AmbariLdapBindAuthenticator extends BindAuthenticator {
     int indexOfBaseDn = groupBase.indexOf(baseDn);
     groupBase = indexOfBaseDn <= 0 ? "" : groupBase.substring(0,indexOfBaseDn - 1);
 
-    StringBuilder filterBuilder = new StringBuilder();
-
-    filterBuilder.append("(&(");
-    filterBuilder.append(groupMembershipAttr);
-    filterBuilder.append("=");
-    filterBuilder.append(user.getNameInNamespace());//DN
-
-    if ((groupSearchFilter == null) || groupSearchFilter.equals("") ) {
-      //If groupSearchFilter is not specified, build it from other authorization
-      // group properties
-      filterBuilder.append(")(objectclass=");
-      filterBuilder.append(groupObjectClass);
-      filterBuilder.append(")(|");
-      String[] adminGroupMappingRegexs = adminGroupMappingRules.split(",");
-      for (String adminGroupMappingRegex : adminGroupMappingRegexs) {
-        filterBuilder.append("(");
-        filterBuilder.append(groupNamingAttribute);
-        filterBuilder.append("=");
-        filterBuilder.append(adminGroupMappingRegex);
-        filterBuilder.append(")");
-      }
-      filterBuilder.append(")");
+    String memberValue = "";
+    if (MEMBER_DN_FORMAT_ATTRIBUTE.equals(groupMembershipAttr)) {
+      memberValue = user.getNameInNamespace();
     } else {
-      filterBuilder.append(")");
-      filterBuilder.append(groupSearchFilter);
+      memberValue = user.getStringAttribute(ldapServerProperties.getUsernameAttribute());
     }
-    filterBuilder.append(")");
+    String setAmbariAdminAttrQuery;
+    if ((groupSearchFilter == null) || groupSearchFilter.equals("") ) {
+      String adminGroupMappingRegex = createAdminGroupMappingRegex(adminGroupMappingRules, groupNamingAttribute);
+      setAmbariAdminAttrQuery = String.format("(&(%s=%s)(objectclass=%s)(|%s))",
+        groupMembershipAttr,
+        memberValue,
+        groupObjectClass,
+        adminGroupMappingRegex);
+    } else {
+      setAmbariAdminAttrQuery = String.format("(&(%s=%s)%s)",
+        groupMembershipAttr,
+        memberValue,
+        groupSearchFilter);
+    }
+    LOG.debug("LDAP login set admin attr query: {}", setAmbariAdminAttrQuery);
 
     AttributesMapper attributesMapper = new AttributesMapper() {
       public Object mapFromAttributes(Attributes attrs)
@@ -119,7 +121,7 @@ public class AmbariLdapBindAuthenticator extends BindAuthenticator {
     ldapTemplate.setIgnoreNameNotFoundException(true);
 
     List<String> ambariAdminGroups = ldapTemplate.search(
-        groupBase,filterBuilder.toString(),attributesMapper);
+        groupBase, setAmbariAdminAttrQuery, attributesMapper);
 
     //user has admin role granted, if user is a member of at least 1 group,
     // which matches the rules in configuration
@@ -128,6 +130,15 @@ public class AmbariLdapBindAuthenticator extends BindAuthenticator {
     }
 
     return user;
+  }
+
+  private String createAdminGroupMappingRegex(String adminGroupMappingRules, String groupNamingAttribute) {
+    String[] adminGroupMappingRegexs = adminGroupMappingRules.split(",");
+    StringBuilder builder = new StringBuilder("");
+    for (String adminGroupMappingRegex : adminGroupMappingRegexs) {
+      builder.append(String.format("(%s=%s)", groupNamingAttribute, adminGroupMappingRegex));
+    }
+    return builder.toString();
   }
 
 }
