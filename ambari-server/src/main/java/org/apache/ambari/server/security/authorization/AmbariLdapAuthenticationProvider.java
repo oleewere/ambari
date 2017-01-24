@@ -190,18 +190,18 @@ public class AmbariLdapAuthenticationProvider implements AuthenticationProvider 
   }
 
   private Integer getUserId(Authentication authentication) {
-    String userName = authentication.getName();
+    String userName = AuthorizationHelper.resolveLoginAliasToUserName(authentication.getName());
 
     UserEntity userEntity = userDAO.findLdapUserByName(userName);
 
     // lookup is case insensitive, so no need for string comparison
     if (userEntity == null) {
-      LOG.info("user not found ");
+      LOG.info("user not found ('{}')", authentication.getName());
       throw new InvalidUsernamePasswordCombinationException();
     }
 
     if (!userEntity.getActive()) {
-      LOG.debug("User account is disabled");
+      LOG.debug("User account is disabled ('{}')", authentication.getName());
 
       throw new InvalidUsernamePasswordCombinationException();
     }
