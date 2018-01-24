@@ -24,6 +24,7 @@ import static org.apache.ambari.logsearch.solr.SolrConstants.ServiceLogConstants
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,10 @@ import java.util.Map;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import io.jsonwebtoken.lang.Collections;
+import org.apache.ambari.logsearch.common.LabelFallbackHandler;
+import org.apache.ambari.logsearch.model.metadata.ComponentMetadata;
+import org.apache.ambari.logsearch.model.metadata.ServiceComponentMetadataWrapper;
 import org.apache.ambari.logsearch.model.response.BarGraphData;
 import org.apache.ambari.logsearch.model.response.BarGraphDataListResponse;
 import org.apache.ambari.logsearch.model.response.CountData;
@@ -46,15 +51,23 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.solr.client.solrj.response.FacetField;
 import org.apache.solr.client.solrj.response.FacetField.Count;
+import org.apache.solr.client.solrj.response.Group;
+import org.apache.solr.client.solrj.response.GroupCommand;
+import org.apache.solr.client.solrj.response.GroupResponse;
 import org.apache.solr.client.solrj.response.PivotField;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.RangeFacet;
+import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.util.NamedList;
 
+import javax.inject.Inject;
 import javax.inject.Named;
 
 @Named
 public class ResponseDataGenerator {
+
+  @Inject
+  private LabelFallbackHandler labelFallbackHandler;
 
   public BarGraphDataListResponse generateBarGraphDataResponseWithRanges(QueryResponse response, String typeField, boolean typeUppercase) {
     BarGraphDataListResponse dataList = new BarGraphDataListResponse();
@@ -396,7 +409,7 @@ public class ResponseDataGenerator {
     if (response == null) {
       return graphInfo;
     }
-    List<List<PivotField>> hirarchicalPivotField = new ArrayList<List<PivotField>>();
+    List<List<PivotField>> hirarchicalPivotField = new ArrayList<>();
     List<GraphData> dataList = new ArrayList<>();
     NamedList<List<PivotField>> namedList = response.getFacetPivot();
     if (namedList != null) {
@@ -449,5 +462,71 @@ public class ResponseDataGenerator {
     }
     
     return response;
+  }
+
+  public Map<String, String> generateComponentMetadata(QueryResponse queryResponse,
+                                                       String facetField, Map<String, String> componetnLabels) {
+    Map<String, String> result = new HashMap<>();
+    if (queryResponse == null) {
+      return result;
+    }
+    FacetField facetFields = queryResponse.getFacetField(facetField);
+    if (facetFields == null) {
+      return result;
+    }
+    List<Count> counts = facetFields.getValues();
+    if (counts == null) {
+      return result;
+    }
+    for (Count count : counts) {
+      if (count.getName() != null) {
+        String label = componetnLabels.get(count.getName());
+        String fallbackedLabel = labelFallbackHandler.fallbackIfRequired(count.getName(), label, true, false, true);
+        result.put(count.getName(), componetnLabels.get(count.getName()));
+      }
+    }
+    return result;
+  }
+
+  public ServiceComponentMetadataWrapper generateGroupedComponentMetadataResponse(QueryResponse queryResponse,
+                                                                                  Map<String, String> groupLabels,
+                                                                                  Map<String, String> componentLabels) {
+    List<ComponentMetadata> componentMetadata = new ArrayList<>();
+    Map<String, String> groupsMetadata = new HashMap<>();
+
+    if (queryResponse == null) {
+      return new ServiceComponentMetadataWrapper(componentMetadata, groupsMetadata);
+    }
+    GroupResponse groupResponse = queryResponse.getGroupResponse();
+    if (groupResponse == null) {
+      return new ServiceComponentMetadataWrapper(componentMetadata, groupsMetadata);
+    }
+    List<GroupCommand> groupCommands = groupResponse.getValues();
+    if (Collections.isEmpty(groupCommands) || Collections.isEmpty(groupCommands.get(0).getValues())) {
+      return new ServiceComponentMetadataWrapper(componentMetadata, groupsMetadata);
+    }
+    List<Group> groups = groupCommands.get(0).getValues();
+    for (Group group : groups) {
+      if (!Collections.isEmpty(group.getResult())) {
+        if (group.getGroupValue() != null) {
+          groupsMetadata.put(group.getGroupValue(), groupLabels.getOrDefault(group.getGroupValue(), null));
+        }
+        for (SolrDocument document : group.getResult()) {
+          convertAndAddSolrDocumentToComponentMetadata(document, componentMetadata, group.getGroupValue(), componentLabels);
+        }
+      }
+    }
+    return new ServiceComponentMetadataWrapper(componentMetadata, groupsMetadata);
+  }
+
+  private void convertAndAddSolrDocumentToComponentMetadata(SolrDocument solrDocument, List<ComponentMetadata> componentMetadata,
+                                                            String group, Map<String, String> serviceComponentLabels) {
+    for (Map.Entry<String, Object> entry : solrDocument.entrySet()) {
+      if (entry.getValue() != null) {
+        String label = serviceComponentLabels.get(entry.getValue().toString());
+        String fallbackedLabel = labelFallbackHandler.fallbackIfRequired(entry.getValue().toString(), label, true, false, true);
+        componentMetadata.add((new ComponentMetadata(entry.getValue().toString(), fallbackedLabel, group)));
+      }
+    }
   }
 }
