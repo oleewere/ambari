@@ -18,9 +18,8 @@
  */
 package org.apache.ambari.logsearch.common;
 
-import com.google.common.annotations.VisibleForTesting;
-import io.jsonwebtoken.lang.Collections;
 import org.apache.ambari.logsearch.conf.UIMappingConfig;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 
@@ -69,7 +68,7 @@ public class LabelFallbackHandler {
 
   public String fallback(String field, boolean replaceUnderscore, boolean replaceUppercaseInWord, boolean capitalizeAll, List<String> prefixesToRemove) {
     String fieldWithoutPrefix =  null;
-    if (!Collections.isEmpty(prefixesToRemove)) {
+    if (!CollectionUtils.isEmpty(prefixesToRemove)) {
       for (String prefix : prefixesToRemove) {
         if (StringUtils.isNotBlank(field) && field.startsWith(prefix)) {
           fieldWithoutPrefix = field.substring(prefix.length());

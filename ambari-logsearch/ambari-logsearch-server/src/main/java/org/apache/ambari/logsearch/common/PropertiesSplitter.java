@@ -19,7 +19,7 @@
 package org.apache.ambari.logsearch.common;
 
 import com.google.common.base.Splitter;
-import io.jsonwebtoken.lang.Collections;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.inject.Named;
@@ -51,7 +51,7 @@ public class PropertiesSplitter {
         for (String keyValueElement : keyValueList) {
           if (StringUtils.isNotEmpty(keyValueElement)) {
             List<String> keyValueElementList = parseList(keyValueElement, keyValueSeparator);
-            if (!Collections.isEmpty(keyValueElementList) && keyValueElementList.size() >= 2
+            if (!CollectionUtils.isEmpty(keyValueElementList) && keyValueElementList.size() >= 2
               && StringUtils.isNotBlank(keyValueElementList.get(0))) {
               resultMap.put(keyValueElementList.get(0), keyValueElementList.get(1));
             }

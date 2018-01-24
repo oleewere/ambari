@@ -32,7 +32,6 @@ import java.util.Map;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import io.jsonwebtoken.lang.Collections;
 import org.apache.ambari.logsearch.common.LabelFallbackHandler;
 import org.apache.ambari.logsearch.model.metadata.ComponentMetadata;
 import org.apache.ambari.logsearch.model.metadata.ServiceComponentMetadataWrapper;
@@ -502,12 +501,12 @@ public class ResponseDataGenerator {
       return new ServiceComponentMetadataWrapper(componentMetadata, groupsMetadata);
     }
     List<GroupCommand> groupCommands = groupResponse.getValues();
-    if (Collections.isEmpty(groupCommands) || Collections.isEmpty(groupCommands.get(0).getValues())) {
+    if (CollectionUtils.isEmpty(groupCommands) || CollectionUtils.isEmpty(groupCommands.get(0).getValues())) {
       return new ServiceComponentMetadataWrapper(componentMetadata, groupsMetadata);
     }
     List<Group> groups = groupCommands.get(0).getValues();
     for (Group group : groups) {
-      if (!Collections.isEmpty(group.getResult())) {
+      if (!CollectionUtils.isEmpty(group.getResult())) {
         if (group.getGroupValue() != null) {
           groupsMetadata.put(group.getGroupValue(), groupLabels.getOrDefault(group.getGroupValue(), null));
         }
