@@ -100,24 +100,7 @@ public class OutputManagerImpl extends OutputManager {
 
     // TODO: Ideally most of the overrides should be configurable
 
-    if (jsonObj.get("type") == null) {
-      jsonObj.put("type", input.getInputDescriptor().getType());
-    }
-    if (input.getClass().isAssignableFrom(InputFile.class)) { // TODO: find better solution
-      InputFile inputFile = (InputFile) input;
-      if (jsonObj.get("path") == null && inputFile.getFilePath() != null) {
-        jsonObj.put("path", inputFile.getFilePath());
-      }
-    }
-    if (jsonObj.get("path") == null && input.getInputDescriptor().getPath() != null) {
-      jsonObj.put("path", input.getInputDescriptor().getPath());
-    }
-    if (jsonObj.get("host") == null && LogFeederUtil.hostName != null) {
-      jsonObj.put("host", LogFeederUtil.hostName);
-    }
-    if (jsonObj.get("ip") == null && LogFeederUtil.ipAddress != null) {
-      jsonObj.put("ip", LogFeederUtil.ipAddress);
-    }
+    LogFeederUtil.fillMapWithFieldDefaults(jsonObj, inputMarker, true);
     jsonObj.putIfAbsent("level", LogFeederConstants.LOG_LEVEL_UNKNOWN);
 
     if (input.isUseEventMD5() || input.isGenEventMD5()) {
