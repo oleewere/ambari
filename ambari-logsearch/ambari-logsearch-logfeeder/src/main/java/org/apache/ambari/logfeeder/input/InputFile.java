@@ -20,6 +20,8 @@ package org.apache.ambari.logfeeder.input;
 
 import org.apache.ambari.logfeeder.conf.LogEntryCacheConfig;
 import org.apache.ambari.logfeeder.conf.LogFeederProps;
+import org.apache.ambari.logfeeder.docker.DockerContainerRegistry;
+import org.apache.ambari.logfeeder.docker.DockerMetadata;
 import org.apache.ambari.logfeeder.input.monitor.LogFileDetachMonitor;
 import org.apache.ambari.logfeeder.input.monitor.LogFilePathUpdateMonitor;
 import org.apache.ambari.logfeeder.input.reader.LogsearchReaderFactory;
@@ -29,7 +31,6 @@ import org.apache.ambari.logfeeder.input.file.ResumeLineNumberHelper;
 import org.apache.ambari.logfeeder.plugin.filter.Filter;
 import org.apache.ambari.logfeeder.plugin.input.Input;
 import org.apache.ambari.logfeeder.util.FileUtil;
-import org.apache.ambari.logfeeder.util.LogFeederUtil;
 import org.apache.ambari.logsearch.config.api.model.inputconfig.InputFileBaseDescriptor;
 import org.apache.ambari.logsearch.config.api.model.inputconfig.InputFileDescriptor;
 import org.apache.commons.lang.BooleanUtils;
@@ -84,6 +85,8 @@ public class InputFile extends Input<LogFeederProps, InputFileMarker> {
   private ThreadGroup threadGroup;
 
   private boolean multiFolder = false;
+  private boolean isDockerLog = false;
+  private DockerContainerRegistry dockerContainerRegistry;
   private Map<String, List<File>> folderMap;
   private Map<String, InputFile> inputChildMap = new HashMap<>();
 
@@ -91,18 +94,30 @@ public class InputFile extends Input<LogFeederProps, InputFileMarker> {
   public boolean isReady() {
     if (!isReady) {
       // Let's try to check whether the file is available
-      logFiles = getActualInputLogFiles();
-      Map<String, List<File>> foldersMap = FileUtil.getFoldersForFiles(logFiles);
-      setFolderMap(foldersMap);
-      if (!ArrayUtils.isEmpty(logFiles) && logFiles[0].isFile()) {
-        if (tail && logFiles.length > 1) {
-          LOG.warn("Found multiple files (" + logFiles.length + ") for the file filter " + filePath +
-            ". Will follow only the first one. Using " + logFiles[0].getAbsolutePath());
+      if (isDockerLog) {
+        Map<String, DockerMetadata> metadataMap = dockerContainerRegistry.getContainerMetadataMap();
+        String logType = getLogType();
+        if (metadataMap.containsKey(logType)) {
+          DockerMetadata dockerMetadata = metadataMap.get(logType);
+          setFilePath(dockerMetadata.getLogPath());
+          setLogFiles(new File[]{new File(filePath)});
+          LOG.info("Docker container log will be monitored: " + logFiles[0].getAbsolutePath());
+          isReady = true;
         }
-        LOG.info("File filter " + filePath + " expanded to " + logFiles[0].getAbsolutePath());
-        isReady = true;
       } else {
-        LOG.debug(logPath + " file doesn't exist. Ignoring for now");
+        logFiles = getActualInputLogFiles();
+        Map<String, List<File>> foldersMap = FileUtil.getFoldersForFiles(logFiles);
+        setFolderMap(foldersMap);
+        if (!ArrayUtils.isEmpty(logFiles) && logFiles[0].isFile()) {
+          if (tail && logFiles.length > 1) {
+            LOG.warn("Found multiple files (" + logFiles.length + ") for the file filter " + filePath +
+              ". Will follow only the first one. Using " + logFiles[0].getAbsolutePath());
+          }
+          LOG.info("File filter " + filePath + " expanded to " + logFiles[0].getAbsolutePath());
+          isReady = true;
+        } else {
+          LOG.debug(logPath + " file doesn't exist. Ignoring for now");
+        }
       }
     }
     return isReady;
@@ -181,6 +196,7 @@ public class InputFile extends Input<LogFeederProps, InputFileMarker> {
 
   @Override
   public InputFileMarker getInputMarker() {
+    // TODO: use this
     return null;
   }
 
@@ -190,10 +206,6 @@ public class InputFile extends Input<LogFeederProps, InputFileMarker> {
     LOG.info("init() called");
 
     checkPointExtension = logFeederProps.getCheckPointExtension();
-
-    // Let's close the file and set it to true after we start monitoring it
-    setClosed(true);
-    logPath = getInputDescriptor().getPath();
     checkPointIntervalMS = (int) ObjectUtils.defaultIfNull(((InputFileBaseDescriptor)getInputDescriptor()).getCheckpointIntervalMs(), DEFAULT_CHECKPOINT_INTERVAL_MS);
     detachIntervalMin = (int) ObjectUtils.defaultIfNull(((InputFileDescriptor)getInputDescriptor()).getDetachIntervalMin(), DEFAULT_DETACH_INTERVAL_MIN * 60);
     detachTimeMin = (int) ObjectUtils.defaultIfNull(((InputFileDescriptor)getInputDescriptor()).getDetachTimeMin(), DEFAULT_DETACH_TIME_MIN * 60);
@@ -201,23 +213,33 @@ public class InputFile extends Input<LogFeederProps, InputFileMarker> {
     maxAgeMin = (int) ObjectUtils.defaultIfNull(((InputFileDescriptor)getInputDescriptor()).getMaxAgeMin(), 0);
     boolean initDefaultFields = BooleanUtils.toBooleanDefaultIfNull(getInputDescriptor().isInitDefaultFields(), false);
     setInitDefaultFields(initDefaultFields);
-    if (StringUtils.isEmpty(logPath)) {
-      LOG.error("path is empty for file input. " + getShortDescription());
-      return;
-    }
 
-    setFilePath(logPath);
-    // Check there can have pattern in folder
-    if (getFilePath() != null && getFilePath().contains("/")) {
-      int lastIndexOfSlash = getFilePath().lastIndexOf("/");
-      String folderBeforeLogName = getFilePath().substring(0, lastIndexOfSlash);
-      if (folderBeforeLogName.contains("*")) {
-        LOG.info("Found regex in folder path ('" + getFilePath() + "'), will check against multiple folders.");
-        setMultiFolder(true);
+    // Let's close the file and set it to true after we start monitoring it
+    setClosed(true);
+    isDockerLog = BooleanUtils.toBooleanDefaultIfNull(((InputFileDescriptor)getInputDescriptor()).getDockerEnabled(), false);
+    if (isDockerLog) {
+      boolean isFileReady = isReady();
+      LOG.info("Container type to monitor " + getType() + ", tail=" + tail + ", isReady=" + isFileReady);
+    } else {
+      logPath = getInputDescriptor().getPath();
+      if (StringUtils.isEmpty(logPath)) {
+        LOG.error("path is empty for file input. " + getShortDescription());
+        return;
       }
+
+      setFilePath(logPath);
+      // Check there can have pattern in folder
+      if (getFilePath() != null && getFilePath().contains("/")) {
+        int lastIndexOfSlash = getFilePath().lastIndexOf("/");
+        String folderBeforeLogName = getFilePath().substring(0, lastIndexOfSlash);
+        if (folderBeforeLogName.contains("*")) {
+          LOG.info("Found regex in folder path ('" + getFilePath() + "'), will check against multiple folders.");
+          setMultiFolder(true);
+        }
+      }
+      boolean isFileReady = isReady();
+      LOG.info("File to monitor " + logPath + ", tail=" + tail + ", isReady=" + isFileReady);
     }
-    boolean isFileReady = isReady();
-    LOG.info("File to monitor " + logPath + ", tail=" + tail + ", isReady=" + isFileReady);
 
     LogEntryCacheConfig cacheConfig = logFeederProps.getLogEntryCacheConfig();
     initCache(
@@ -510,4 +532,11 @@ public class InputFile extends Input<LogFeederProps, InputFileMarker> {
     return maxAgeMin;
   }
 
+  public void setDockerContainerRegistry(DockerContainerRegistry dockerContainerRegistry) {
+    this.dockerContainerRegistry = dockerContainerRegistry;
+  }
+
+  public boolean isDockerLog() {
+    return isDockerLog;
+  }
 }
