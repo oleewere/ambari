@@ -85,7 +85,8 @@ public class InputFile extends Input<LogFeederProps, InputFileMarker> {
   private ThreadGroup threadGroup;
 
   private boolean multiFolder = false;
-  private boolean isDockerLog = false;
+  private boolean dockerLog = false;
+  private boolean dockerLogParent = true;
   private DockerContainerRegistry dockerContainerRegistry;
   private Map<String, List<File>> folderMap;
   private Map<String, InputFile> inputChildMap = new HashMap<>();
@@ -94,11 +95,11 @@ public class InputFile extends Input<LogFeederProps, InputFileMarker> {
   public boolean isReady() {
     if (!isReady) {
       // Let's try to check whether the file is available
-      if (isDockerLog) {
-        Map<String, DockerMetadata> metadataMap = dockerContainerRegistry.getContainerMetadataMap();
+      if (dockerLog) {
+        Map<String, Map<String, DockerMetadata> metadataMap = dockerContainerRegistry.getContainerMetadataMap();
         String logType = getLogType();
         if (metadataMap.containsKey(logType)) {
-          DockerMetadata dockerMetadata = metadataMap.get(logType);
+          Map<String, DockerMetadata> dockerMetadataMap = metadataMap.get(logType);
           setFilePath(dockerMetadata.getLogPath());
           setLogFiles(new File[]{new File(filePath)});
           LOG.info("Docker container log will be monitored: " + logFiles[0].getAbsolutePath());
@@ -165,7 +166,15 @@ public class InputFile extends Input<LogFeederProps, InputFileMarker> {
   @Override
   public boolean monitor() {
     if (isReady()) {
-      if (multiFolder) {
+      if (dockerLog) {
+        if (dockerLogParent) {
+          threadGroup = new ThreadGroup("docker-parent-" + getLogType());
+        }
+        else {
+
+        }
+      }
+      else if (multiFolder) {
         try {
           threadGroup = new ThreadGroup(getNameForThread());
           if (getFolderMap() != null) {
@@ -216,8 +225,8 @@ public class InputFile extends Input<LogFeederProps, InputFileMarker> {
 
     // Let's close the file and set it to true after we start monitoring it
     setClosed(true);
-    isDockerLog = BooleanUtils.toBooleanDefaultIfNull(((InputFileDescriptor)getInputDescriptor()).getDockerEnabled(), false);
-    if (isDockerLog) {
+    dockerLog = BooleanUtils.toBooleanDefaultIfNull(((InputFileDescriptor)getInputDescriptor()).getDockerEnabled(), false);
+    if (dockerLog) {
       boolean isFileReady = isReady();
       LOG.info("Container type to monitor " + getType() + ", tail=" + tail + ", isReady=" + isFileReady);
     } else {
@@ -537,6 +546,14 @@ public class InputFile extends Input<LogFeederProps, InputFileMarker> {
   }
 
   public boolean isDockerLog() {
-    return isDockerLog;
+    return dockerLog;
+  }
+
+  public boolean isDockerLogParent() {
+    return dockerLogParent;
+  }
+
+  public void setDockerLogParent(boolean dockerLogParent) {
+    this.dockerLogParent = dockerLogParent;
   }
 }

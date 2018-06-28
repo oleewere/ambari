@@ -25,6 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,13 +33,16 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+/**
+ * Register
+ */
 public final class DockerContainerRegistry implements ContainerRegistry<DockerMetadata> {
 
   private static final Logger logger = LoggerFactory.getLogger(DockerContainerRegistry.class);
 
   private static DockerContainerRegistry INSTANCE = null;
   private final Properties configs;
-  private Map<String, DockerMetadata> dockerMetadataMap = new ConcurrentHashMap<>();
+  private Map<String, Map<String, DockerMetadata>> dockerMetadataMap = new ConcurrentHashMap<>();
   private int waitIntervalMin = 1;
 
   private DockerContainerRegistry(Properties configs) {
@@ -48,7 +52,7 @@ public final class DockerContainerRegistry implements ContainerRegistry<DockerMe
 
   @Override
   public void register() {
-    Map<String, DockerMetadata> actualDockerMetadataMap = renewMetadata();
+    Map<String, Map<String, DockerMetadata>> actualDockerMetadataMap = renewMetadata();
     if (!actualDockerMetadataMap.isEmpty()) {
       dockerMetadataMap.putAll(actualDockerMetadataMap);
       dockerMetadataMap = dockerMetadataMap
@@ -57,14 +61,16 @@ public final class DockerContainerRegistry implements ContainerRegistry<DockerMe
         .filter(e -> actualDockerMetadataMap.keySet().contains(e.getKey()))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-      for (Map.Entry<String, DockerMetadata> entry : dockerMetadataMap.entrySet()) {
-        logger.debug("Found container metadata: {}", entry.getValue().toString());
+      for (Map.Entry<String, Map<String, DockerMetadata>> entry : dockerMetadataMap.entrySet()) {
+        for (Map.Entry<String, DockerMetadata> metadataEntry : entry.getValue().entrySet()) {
+          logger.debug("Found container metadata: {}", entry.getValue().toString());
+        }
       }
     }
   }
 
-  private Map<String, DockerMetadata> renewMetadata() {
-    final Map<String, DockerMetadata> actualDockerMetadataMap = new HashMap<>();
+  private Map<String, Map<String, DockerMetadata>> renewMetadata() {
+    final Map<String, Map<String, DockerMetadata>> actualDockerMetadataMap = new HashMap<>();
     final List<String> containerIds = new DockerListContainerCommand().execute(null);
     final Map<String, String> params = new HashMap<>();
 
@@ -80,7 +86,15 @@ public final class DockerContainerRegistry implements ContainerRegistry<DockerMe
       Map<String, String> labels = (Map<String, String>) dockerConfigMap.get("Labels");
       String componentType = labels.get("logfeeder.log.type");
       if (componentType != null) {
-        actualDockerMetadataMap.put(componentType, new DockerMetadata(id, name, hostname, componentType, logPath));
+        if (actualDockerMetadataMap.containsKey(componentType)) {
+          Map<String, DockerMetadata> componentMetadataMap = actualDockerMetadataMap.get(componentType);
+          componentMetadataMap.put(id, new DockerMetadata(id, name, hostname, componentType, logPath));
+          actualDockerMetadataMap.put(componentType, componentMetadataMap);
+        } else {
+          Map<String, DockerMetadata> componentMetadataMap = new HashMap<>();
+          componentMetadataMap.put(id, new DockerMetadata(id, name, hostname, componentType, logPath));
+          actualDockerMetadataMap.put(componentType, componentMetadataMap);
+        }
       } else {
         logger.debug("Ignoring docker metadata from registry as container (id: {}, name: {}) as it has no 'logfeeder.log.type' label", id, name);
       }
@@ -90,7 +104,7 @@ public final class DockerContainerRegistry implements ContainerRegistry<DockerMe
   }
 
   @Override
-  public Map<String, DockerMetadata> getContainerMetadataMap() {
+  public Map<String, Map<String, DockerMetadata>> getContainerMetadataMap() {
     return dockerMetadataMap;
   }
 

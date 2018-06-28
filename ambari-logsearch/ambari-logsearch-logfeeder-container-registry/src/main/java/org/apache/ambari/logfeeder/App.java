@@ -18,23 +18,15 @@
  */
 package org.apache.ambari.logfeeder;
 
-import java.util.Map;
+import org.apache.ambari.logfeeder.docker.DockerContainerRegistry;
 
-/**
- * Responsible of register or drop new / existing containers.
- * @param <METADATA_TYPE> type of metadata - could be docker or other container implementation
- */
-public interface ContainerRegistry<METADATA_TYPE extends ContainerMetadata> {
+import java.util.Properties;
 
-  /**
-   * Register process of running containers
-   */
-  void register();
+public class App {
 
-  /**
-   * Holds container metadata per log component type and container id.
-   * @return container metadata
-   */
-  Map<String, Map<String, METADATA_TYPE>> getContainerMetadataMap();
-
+  public static void main(String [] args) {
+    ContainerRegistry containerRegistry = DockerContainerRegistry.getInstance(new Properties());
+    containerRegistry.register();
+    containerRegistry.getContainerMetadataMap();
+  }
 }
