@@ -39,7 +39,7 @@
     <module>ambari-logsearch-config-solr</module>
   </modules>
   <properties>
-    <jdk.version>1.8</jdk.version>
+    <jdk.version>10</jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <python.ver>python &gt;= 2.6</python.ver>
     <deb.python.ver>python (&gt;= 2.6)</deb.python.ver>
@@ -202,7 +202,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.2</version>
+        <version>3.7.0</version>
         <configuration>
           <source>${jdk.version}</source>
           <target>${jdk.version}</target>

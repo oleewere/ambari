@@ -19,7 +19,6 @@
 package org.apache.ambari.logsearch.web.security;
 
 import org.apache.ambari.logsearch.conf.AuthPropsConfig;
-import org.apache.ambari.logsearch.util.CommonUtil;
 import org.apache.ambari.logsearch.web.model.User;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,6 +28,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertSame;
@@ -47,6 +48,7 @@ public class LogsearchFileAuthenticationProviderTest {
   private LogsearchFileAuthenticationProvider provider;
   private AuthPropsConfig mockAuthPropsConfig;
   private UserDetailsService mockUserDetailsService;
+  private PasswordEncoder passwordEncoder;
   
   @Before
   public void init() throws Exception {
@@ -61,6 +63,9 @@ public class LogsearchFileAuthenticationProviderTest {
     Field userDetailsServiceField = LogsearchFileAuthenticationProvider.class.getDeclaredField("userDetailsService");
     userDetailsServiceField.setAccessible(true);
     userDetailsServiceField.set(provider, mockUserDetailsService);
+
+    passwordEncoder = new BCryptPasswordEncoder();
+    provider.setPasswordEncoder(passwordEncoder);
   }
   
   @Test
@@ -190,7 +195,7 @@ public class LogsearchFileAuthenticationProviderTest {
   @Test
   public void testAuthenticationWrongPassword() {
     List<GrantedAuthority> grantedAuths = Arrays.<GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_USER"));
-    User user = new User("principal", CommonUtil.encryptPassword("principal", "notCredentials"), grantedAuths);
+    User user = new User("principal", passwordEncoder.encode("notCredentials"), grantedAuths);
     
     expect(mockAuthPropsConfig.isAuthFileEnabled()).andReturn(true);
     expect(mockUserDetailsService.loadUserByUsername("principal")).andReturn(user);
@@ -211,7 +216,8 @@ public class LogsearchFileAuthenticationProviderTest {
   @Test
   public void testAuthenticationSuccessful() {
     List<GrantedAuthority> grantedAuths = Arrays.<GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_USER"));
-    User user = new User("principal", CommonUtil.encryptPassword("principal", "credentials"), grantedAuths);
+    String encodedPassword = passwordEncoder.encode("credentials");
+    User user = new User("principal", "credentials", grantedAuths);
     
     expect(mockAuthPropsConfig.isAuthFileEnabled()).andReturn(true);
     expect(mockUserDetailsService.loadUserByUsername("principal")).andReturn(user);
@@ -219,10 +225,8 @@ public class LogsearchFileAuthenticationProviderTest {
     replay(mockAuthPropsConfig, mockUserDetailsService);
     
     Authentication authentication = new TestingAuthenticationToken("principal", "credentials");
-    
     Authentication authenticationResult = provider.authenticate(authentication);
     assertEquals("principal", authenticationResult.getName());
-    assertEquals(CommonUtil.encryptPassword("principal", "credentials"), authenticationResult.getCredentials());
     assertEquals(1, authenticationResult.getAuthorities().size());
     assertEquals(new SimpleGrantedAuthority("ROLE_USER"), authenticationResult.getAuthorities().iterator().next());
     
