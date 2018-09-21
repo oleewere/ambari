@@ -26,14 +26,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.ambari.logfeeder.common.LogFeederConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -51,25 +49,12 @@ public class S3Util {
   }
   
   public static AmazonS3 getS3Client(String accessKey, String secretKey) {
-    AWSCredentials awsCredentials = AWSUtil.createAWSCredentials(accessKey, secretKey);
-    AmazonS3 s3client;
-    if (awsCredentials != null) {
-      s3client = new AmazonS3Client(awsCredentials);
-    } else {
-      s3client = new AmazonS3Client();
-    }
-    return s3client;
+    AmazonS3 s3client = AmazonS3ClientBuilder.defaultClient();
+    return AmazonS3ClientBuilder.defaultClient();
   }
 
   public static TransferManager getTransferManager(String accessKey, String secretKey) {
-    AWSCredentials awsCredentials = AWSUtil.createAWSCredentials(accessKey, secretKey);
-    TransferManager transferManager;
-    if (awsCredentials != null) {
-      transferManager = new TransferManager(awsCredentials);
-    } else {
-      transferManager = new TransferManager();
-    }
-    return transferManager;
+    return new TransferManager();
   }
 
   public static void shutdownTransferManager(TransferManager transferManager) {
@@ -140,7 +125,7 @@ public class S3Util {
           transferManager.upload(new PutObjectRequest(bucketName, s3Key, in, new ObjectMetadata())).waitForUploadResult();
           LOG.debug("Data Uploaded to s3 file :" + s3Key + " in bucket :" + bucketName);
         }
-      } catch (AmazonClientException | InterruptedException e) {
+      } catch (Exception e) {
         LOG.error(e);
       } finally {
         try {

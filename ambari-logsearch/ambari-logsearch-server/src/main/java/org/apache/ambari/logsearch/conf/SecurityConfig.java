@@ -189,7 +189,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
   @Bean
   public LdapAuthoritiesPopulator ldapAuthoritiesPopulator() {
-    if (StringUtils.isNotBlank(authPropsConfig.getLdapAuthConfig().getLdapGroupSearchBase())) {
+    if (authPropsConfig.isAuthLdapEnabled() || StringUtils.isNotBlank(authPropsConfig.getLdapAuthConfig().getLdapGroupSearchBase())) {
       final DefaultLdapAuthoritiesPopulator ldapAuthoritiesPopulator =
         new DefaultLdapAuthoritiesPopulator(ldapContextSource(), authPropsConfig.getLdapAuthConfig().getLdapGroupSearchBase());
       ldapAuthoritiesPopulator.setGroupSearchFilter(authPropsConfig.getLdapAuthConfig().getLdapGroupSearchFilter());

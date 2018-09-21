@@ -18,7 +18,6 @@
 
 package org.apache.ambari.logfeeder.output;
 
-import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.google.common.annotations.VisibleForTesting;
@@ -157,7 +156,7 @@ public class S3Uploader implements Runnable {
     try {
       Upload upload = transferManager.upload(bucketName, s3Key, localFile);
       upload.waitForUploadResult();
-    } catch (AmazonClientException | InterruptedException e) {
+    } catch (InterruptedException e) {
       LOG.error("s3 uploading failed for file :" + localFile.getAbsolutePath(), e);
     } finally {
       S3Util.shutdownTransferManager(transferManager);
