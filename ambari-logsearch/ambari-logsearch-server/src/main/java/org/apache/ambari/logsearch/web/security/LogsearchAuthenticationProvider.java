@@ -20,6 +20,7 @@ package org.apache.ambari.logsearch.web.security;
 
 import java.util.HashMap;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -29,7 +30,6 @@ import org.apache.log4j.Logger;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
 
 @Named
@@ -47,6 +47,7 @@ public class LogsearchAuthenticationProvider extends LogsearchAbstractAuthentica
   private LogsearchSimpleAuthenticationProvider simpleAuthenticationProvider;
 
   @Inject
+  @Nullable
   private LogsearchLdapAuthenticationProvider ldapAuthenticationProvider;
 
   @Override

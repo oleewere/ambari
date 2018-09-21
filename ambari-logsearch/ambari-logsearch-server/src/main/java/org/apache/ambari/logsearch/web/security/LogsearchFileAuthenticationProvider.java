@@ -79,14 +79,14 @@ public class LogsearchFileAuthenticationProvider extends LogsearchAbstractAuthen
       logger.error("Password can't be null or empty.");
       throw new BadCredentialsException("Password can't be null or empty.");
     }
-    String encPassword = passwordEncoder.encode(password);
-    if (!passwordEncoder.matches(user.getPassword(), encPassword)) {
+    //String encPassword = passwordEncoder.encode(password);
+    if (!passwordEncoder.matches(password, user.getPassword())) {
       logger.error("Wrong password for user=" + username);
       throw new BadCredentialsException("Wrong password.");
     }
     
     Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
-    authentication = new UsernamePasswordAuthenticationToken(username, encPassword, authorities);
+    authentication = new UsernamePasswordAuthenticationToken(username, user.getPassword(), authorities);
     return authentication;
   }
 
