@@ -19,23 +19,18 @@
 package org.apache.ambari.logfeeder.util;
 
 import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import io.minio.MinioClient;
+import io.minio.errors.InvalidEndpointException;
+import io.minio.errors.InvalidPortException;
 import org.apache.ambari.logfeeder.common.LogFeederConstants;
-import org.apache.commons.io.IOUtils;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.transfer.TransferManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -49,19 +44,8 @@ public class S3Util {
     throw new UnsupportedOperationException();
   }
   
-  public static AmazonS3 getS3Client(String accessKey, String secretKey) {
-    AmazonS3 s3client = AmazonS3ClientBuilder.defaultClient();
-    return AmazonS3ClientBuilder.defaultClient();
-  }
-
-  public static TransferManager getTransferManager(String accessKey, String secretKey) {
-    return new TransferManager();
-  }
-
-  public static void shutdownTransferManager(TransferManager transferManager) {
-    if (transferManager != null) {
-      transferManager.shutdownNow();
-    }
+  public static MinioClient getS3Client(String endpoint, String accessKey, String secretKey) throws InvalidPortException, InvalidEndpointException {
+    return new MinioClient(endpoint, accessKey, secretKey);
   }
 
   public static String getBucketName(String s3Path) {
@@ -93,49 +77,58 @@ public class S3Util {
   /**
    * Get the buffer reader to read s3 file as a stream
    */
-  public static BufferedReader getReader(String s3Path, String accessKey, String secretKey) throws IOException {
+  public static BufferedReader getReader(String s3Path, String s3Endpoint, String accessKey, String secretKey) throws Exception {
     // TODO error handling
     // Compression support
     // read header and decide the compression(auto detection)
     // For now hard-code GZIP compression
     String s3Bucket = getBucketName(s3Path);
     String s3Key = getS3Key(s3Path);
-    S3Object fileObj = getS3Client(accessKey, secretKey).getObject(new GetObjectRequest(s3Bucket, s3Key));
+    GZIPInputStream objectInputStream = null;
+    InputStreamReader inputStreamReader = null;
+    BufferedReader bufferedReader = null;
     try {
-      GZIPInputStream objectInputStream = new GZIPInputStream(fileObj.getObjectContent());
-      BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(objectInputStream));
+      MinioClient s3Client = getS3Client(s3Endpoint, accessKey, secretKey);
+      s3Client.statObject(s3Bucket, s3Key);
+      objectInputStream = new GZIPInputStream(s3Client.getObject(s3Bucket, s3Key));
+      inputStreamReader = new InputStreamReader(objectInputStream);
+      bufferedReader = new BufferedReader(inputStreamReader);
       return bufferedReader;
-    } catch (IOException e) {
+    } catch (Exception e) {
       logger.error("Error in creating stream reader for s3 file :" + s3Path, e.getCause());
       throw e;
+    } finally {
+      try {
+        if (inputStreamReader != null) {
+          inputStreamReader.close();
+        }
+        if (bufferedReader != null) {
+          bufferedReader.close();
+        }
+        if (objectInputStream != null) {
+          objectInputStream.close();
+        }
+      } catch (Exception e) {
+        // do nothing
+      }
     }
   }
 
-  public static void writeIntoS3File(String data, String bucketName, String s3Key, String accessKey, String secretKey) {
-    InputStream in = null;
+  public static void writeFileIntoS3File(String filename, String bucketName, String s3Key, String endpoint, String accessKey, String secretKey) {
     try {
-      in = IOUtils.toInputStream(data, "UTF-8");
-    } catch (IOException e) {
-      logger.error(e);
+      MinioClient s3Client = getS3Client(endpoint, accessKey, secretKey);
+      s3Client.putObject(bucketName, s3Key, filename);
+    } catch (Exception e) {
+      logger.error("Could not write file to s3", e);
     }
-    
-    if (in != null) {
-      TransferManager transferManager = getTransferManager(accessKey, secretKey);
-      try {
-        if (transferManager != null) {
-          transferManager.upload(new PutObjectRequest(bucketName, s3Key, in, new ObjectMetadata())).waitForUploadResult();
-          logger.debug("Data Uploaded to s3 file :" + s3Key + " in bucket :" + bucketName);
-        }
-      } catch (Exception e) {
-        logger.error(e);
-      } finally {
-        try {
-          shutdownTransferManager(transferManager);
-          in.close();
-        } catch (IOException e) {
-          // ignore
-        }
-      }
+  }
+
+  public static void writeDataIntoS3File(String data, String bucketName, String s3Key, String endpoint, String accessKey, String secretKey) {
+    try (ByteArrayInputStream bai = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8))) {
+      MinioClient s3Client = getS3Client(endpoint, accessKey, secretKey);
+      s3Client.putObject(bucketName, s3Key, bai, bai.available(), "application/octet-stream");
+    } catch (Exception e) {
+      logger.error("Could not write data to s3", e);
     }
   }
 }

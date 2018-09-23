@@ -145,14 +145,9 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-core</artifactId>
-      <version>1.11.412</version>
-    </dependency>
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.11.412</version>
+      <groupId>io.minio</groupId>
+      <artifactId>minio</artifactId>
+      <version>5.0.1</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>

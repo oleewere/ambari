@@ -18,6 +18,7 @@
  */
 package org.apache.ambari.logfeeder.input;
 
+import org.apache.ambari.logfeeder.output.S3OutputConfiguration;
 import org.apache.ambari.logfeeder.util.S3Util;
 import org.apache.ambari.logsearch.config.api.model.inputconfig.InputS3FileDescriptor;
 import org.apache.commons.lang.ArrayUtils;
@@ -82,7 +83,11 @@ public class InputS3File extends InputFile {
   public BufferedReader openLogFile(File logPathFile) throws Exception {
     String s3AccessKey = ((InputS3FileDescriptor)getInputDescriptor()).getS3AccessKey();
     String s3SecretKey = ((InputS3FileDescriptor)getInputDescriptor()).getS3SecretKey();
-    BufferedReader br = S3Util.getReader(logPathFile.getPath(), s3AccessKey, s3SecretKey);
+    String s3Endpoint = ((InputS3FileDescriptor)getInputDescriptor()).getS3Endpoint();
+    if (s3Endpoint == null) {
+      s3Endpoint = S3OutputConfiguration.DEFAULT_S3_ENDPOINT;
+    }
+    BufferedReader br = S3Util.getReader(logPathFile.getPath(), s3Endpoint, s3AccessKey, s3SecretKey);
     Object fileKey = getFileKey(logPathFile);
     setFileKey(fileKey);
     String base64FileKey = Base64.byteArrayToBase64(getFileKey().toString().getBytes());

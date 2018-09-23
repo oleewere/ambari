@@ -130,8 +130,8 @@ public class OutputS3File extends OutputFile implements RolloverCondition, Rollo
     String s3ResolvedKey = new S3LogPathResolver().getResolvedPath(getStringValue("s3_config_dir"), s3KeySuffix,
         s3OutputConfiguration.getCluster());
 
-    S3Util.writeIntoS3File(configJson, s3OutputConfiguration.getS3BucketName(), s3ResolvedKey,
-        s3OutputConfiguration.getS3AccessKey(), s3OutputConfiguration.getS3SecretKey());
+    S3Util.writeDataIntoS3File(configJson, s3OutputConfiguration.getS3BucketName(), s3ResolvedKey,
+      s3OutputConfiguration.getS3Endpoint(), s3OutputConfiguration.getS3AccessKey(), s3OutputConfiguration.getS3SecretKey());
   }
 
   private String getComponentConfigFileName(String componentName) {

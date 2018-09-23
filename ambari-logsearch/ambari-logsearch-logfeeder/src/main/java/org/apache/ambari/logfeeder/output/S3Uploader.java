@@ -18,8 +18,6 @@
 
 package org.apache.ambari.logfeeder.output;
 
-import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.Upload;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.ambari.logfeeder.common.LogFeederConstants;
 import org.apache.ambari.logfeeder.util.CompressionUtil;
@@ -129,6 +127,7 @@ public class S3Uploader implements Runnable {
     String s3AccessKey = s3OutputConfiguration.getS3AccessKey();
     String s3SecretKey = s3OutputConfiguration.getS3SecretKey();
     String compressionAlgo = s3OutputConfiguration.getCompressionAlgo();
+    String s3Endpoint = s3OutputConfiguration.getS3Endpoint();
 
     String keySuffix = fileToUpload.getName() + "." + compressionAlgo;
     String s3Path = new S3LogPathResolver().getResolvedPath(
@@ -138,7 +137,7 @@ public class S3Uploader implements Runnable {
     File sourceFile = createCompressedFileForUpload(fileToUpload, compressionAlgo);
 
     logger.info("Starting S3 upload " + sourceFile + " -> " + bucketName + ", " + s3Path);
-    uploadFileToS3(bucketName, s3Path, sourceFile, s3AccessKey, s3SecretKey);
+    S3Util.writeFileIntoS3File(sourceFile.getAbsolutePath(), bucketName, s3Path, s3Endpoint, s3AccessKey, s3SecretKey);
 
     // delete local compressed file
     sourceFile.delete();
@@ -149,19 +148,6 @@ public class S3Uploader implements Runnable {
       }
     }
     return s3Path;
-  }
-
-  @VisibleForTesting
-  protected void uploadFileToS3(String bucketName, String s3Key, File localFile, String accessKey, String secretKey) {
-    TransferManager transferManager = S3Util.getTransferManager(accessKey, secretKey);
-    try {
-      Upload upload = transferManager.upload(bucketName, s3Key, localFile);
-      upload.waitForUploadResult();
-    } catch (InterruptedException e) {
-      logger.error("s3 uploading failed for file :" + localFile.getAbsolutePath(), e);
-    } finally {
-      S3Util.shutdownTransferManager(transferManager);
-    }
   }
 
   @VisibleForTesting
