@@ -23,22 +23,58 @@
   <packaging>pom</packaging>
 
   <url>http://maven.apache.org</url>
-  <modules>
-    <module>ambari-logsearch-assembly</module>
-    <module>ambari-logsearch-appender</module>
-    <module>ambari-logsearch-log4j2-appender</module>
-    <module>ambari-logsearch-server</module>
-    <module>ambari-logsearch-web</module>
-    <module>ambari-logsearch-logfeeder</module>
-    <module>ambari-logsearch-config-api</module>
-    <module>ambari-logsearch-config-json</module>
-    <module>ambari-logsearch-config-zookeeper</module>
-    <module>ambari-logsearch-it</module>
-    <module>ambari-logsearch-logfeeder-plugin-api</module>
-    <module>ambari-logsearch-logfeeder-container-registry</module>
-    <module>ambari-logsearch-config-local</module>
-    <module>ambari-logsearch-config-solr</module>
-  </modules>
+  <profiles>
+    <profile>
+      <id>all</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>ambari-logsearch-web</module>
+        <module>ambari-logsearch-assembly</module>
+        <module>ambari-logsearch-appender</module>
+        <module>ambari-logsearch-log4j2-appender</module>
+        <module>ambari-logsearch-server</module>
+        <module>ambari-logsearch-it</module>
+        <module>ambari-logsearch-logfeeder</module>
+        <module>ambari-logsearch-config-api</module>
+        <module>ambari-logsearch-config-json</module>
+        <module>ambari-logsearch-config-zookeeper</module>
+        <module>ambari-logsearch-logfeeder-plugin-api</module>
+        <module>ambari-logsearch-logfeeder-container-registry</module>
+        <module>ambari-logsearch-config-local</module>
+        <module>ambari-logsearch-config-solr</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>be</id>
+      <properties>
+        <rat.skip>true</rat.skip>
+      </properties>
+      <modules>
+        <module>ambari-logsearch-appender</module>
+        <module>ambari-logsearch-log4j2-appender</module>
+        <module>ambari-logsearch-server</module>
+        <module>ambari-logsearch-logfeeder</module>
+        <module>ambari-logsearch-config-api</module>
+        <module>ambari-logsearch-config-json</module>
+        <module>ambari-logsearch-config-zookeeper</module>
+        <module>ambari-logsearch-logfeeder-plugin-api</module>
+        <module>ambari-logsearch-logfeeder-container-registry</module>
+        <module>ambari-logsearch-config-local</module>
+        <module>ambari-logsearch-config-solr</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>fe</id>
+      <properties>
+        <rat.skip>true</rat.skip>
+      </properties>
+      <modules>
+        <module>ambari-logsearch-web</module>
+      </modules>
+    </profile>
+  </profiles>
   <properties>
     <jdk.version>10</jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -54,6 +90,7 @@
     <reuseForks>false</reuseForks>
     <surefire.argLine>-Xmx1024m -Xms512m</surefire.argLine>
     <skipSurefireTests>false</skipSurefireTests>
+    <compiler.version>3.8.0</compiler.version>
   </properties>
 
   <licenses>
@@ -203,7 +240,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.0</version>
+        <version>${compiler.version}</version>
         <configuration>
           <source>${jdk.version}</source>
           <target>${jdk.version}</target>
