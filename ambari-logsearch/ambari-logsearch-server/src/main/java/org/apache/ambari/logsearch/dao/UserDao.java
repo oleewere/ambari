@@ -30,13 +30,14 @@ import org.apache.ambari.logsearch.util.FileUtil;
 import org.apache.ambari.logsearch.util.JSONUtil;
 import org.apache.ambari.logsearch.web.model.User;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class UserDao {
-  private static final Logger logger = Logger.getLogger(UserDao.class);
+  private static final Logger logger = LogManager.getLogger(UserDao.class);
 
   private static final String USER_NAME = "username";
   private static final String PASSWORD = "password";

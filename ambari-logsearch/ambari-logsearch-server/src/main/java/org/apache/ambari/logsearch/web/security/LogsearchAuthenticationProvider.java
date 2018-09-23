@@ -25,8 +25,9 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.apache.ambari.logsearch.util.JSONUtil;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -34,8 +35,8 @@ import org.springframework.security.web.authentication.WebAuthenticationDetails;
 
 @Named
 public class LogsearchAuthenticationProvider extends LogsearchAbstractAuthenticationProvider {
-  private static final Logger logger = Logger .getLogger(LogsearchAuthenticationProvider.class);
-  private static final Logger auditLogger = Logger.getLogger("org.apache.ambari.logsearch.audit");
+  private static final Logger logger = LogManager.getLogger(LogsearchAuthenticationProvider.class);
+  private static final Logger auditLogger = LogManager.getLogger("org.apache.ambari.logsearch.audit");
 
   @Inject
   private LogsearchFileAuthenticationProvider fileAuthenticationProvider;

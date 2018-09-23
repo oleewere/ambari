@@ -26,50 +26,36 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.ambari.logfeeder.common.LogFeederConstants;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.transfer.TransferManager;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Utility to connect to s3
  */
 public class S3Util {
-  private static final Logger LOG = Logger.getLogger(S3Util.class);
+  private static final Logger logger = LogManager.getLogger(S3Util.class);
 
   private S3Util() {
     throw new UnsupportedOperationException();
   }
   
   public static AmazonS3 getS3Client(String accessKey, String secretKey) {
-    AWSCredentials awsCredentials = AWSUtil.createAWSCredentials(accessKey, secretKey);
-    AmazonS3 s3client;
-    if (awsCredentials != null) {
-      s3client = new AmazonS3Client(awsCredentials);
-    } else {
-      s3client = new AmazonS3Client();
-    }
-    return s3client;
+    AmazonS3 s3client = AmazonS3ClientBuilder.defaultClient();
+    return AmazonS3ClientBuilder.defaultClient();
   }
 
   public static TransferManager getTransferManager(String accessKey, String secretKey) {
-    AWSCredentials awsCredentials = AWSUtil.createAWSCredentials(accessKey, secretKey);
-    TransferManager transferManager;
-    if (awsCredentials != null) {
-      transferManager = new TransferManager(awsCredentials);
-    } else {
-      transferManager = new TransferManager();
-    }
-    return transferManager;
+    return new TransferManager();
   }
 
   public static void shutdownTransferManager(TransferManager transferManager) {
@@ -120,7 +106,7 @@ public class S3Util {
       BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(objectInputStream));
       return bufferedReader;
     } catch (IOException e) {
-      LOG.error("Error in creating stream reader for s3 file :" + s3Path, e.getCause());
+      logger.error("Error in creating stream reader for s3 file :" + s3Path, e.getCause());
       throw e;
     }
   }
@@ -130,7 +116,7 @@ public class S3Util {
     try {
       in = IOUtils.toInputStream(data, "UTF-8");
     } catch (IOException e) {
-      LOG.error(e);
+      logger.error(e);
     }
     
     if (in != null) {
@@ -138,10 +124,10 @@ public class S3Util {
       try {
         if (transferManager != null) {
           transferManager.upload(new PutObjectRequest(bucketName, s3Key, in, new ObjectMetadata())).waitForUploadResult();
-          LOG.debug("Data Uploaded to s3 file :" + s3Key + " in bucket :" + bucketName);
+          logger.debug("Data Uploaded to s3 file :" + s3Key + " in bucket :" + bucketName);
         }
-      } catch (AmazonClientException | InterruptedException e) {
-        LOG.error(e);
+      } catch (Exception e) {
+        logger.error(e);
       } finally {
         try {
           shutdownTransferManager(transferManager);
