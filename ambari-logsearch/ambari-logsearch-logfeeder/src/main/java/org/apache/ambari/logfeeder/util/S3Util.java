@@ -62,7 +62,7 @@ public class S3Util {
     StringBuilder s3Key = new StringBuilder();
     if (s3Path != null) {
       String[] s3PathParts = s3Path.replace(LogFeederConstants.S3_PATH_START_WITH, "").split(LogFeederConstants.S3_PATH_SEPARATOR);
-      ArrayList<String> s3PathList = new ArrayList<String>(Arrays.asList(s3PathParts));
+      ArrayList<String> s3PathList = new ArrayList<>(Arrays.asList(s3PathParts));
       s3PathList.remove(0);// remove bucketName
       for (int index = 0; index < s3PathList.size(); index++) {
         if (index > 0) {

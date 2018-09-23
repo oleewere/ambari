@@ -137,7 +137,7 @@ public class S3Uploader implements Runnable {
     File sourceFile = createCompressedFileForUpload(fileToUpload, compressionAlgo);
 
     logger.info("Starting S3 upload " + sourceFile + " -> " + bucketName + ", " + s3Path);
-    S3Util.writeFileIntoS3File(sourceFile.getAbsolutePath(), bucketName, s3Path, s3Endpoint, s3AccessKey, s3SecretKey);
+    writeFileIntoS3File(sourceFile, bucketName, s3Path, s3Endpoint, s3AccessKey, s3SecretKey);
 
     // delete local compressed file
     sourceFile.delete();
@@ -148,6 +148,12 @@ public class S3Uploader implements Runnable {
       }
     }
     return s3Path;
+  }
+
+  @VisibleForTesting
+  protected void writeFileIntoS3File(File sourceFile, String bucketName, String s3Path,
+                                     String s3Endpoint, String s3AccessKey, String s3SecretKey) {
+    S3Util.writeFileIntoS3File(sourceFile.getAbsolutePath(), bucketName, s3Path, s3Endpoint, s3AccessKey, s3SecretKey);
   }
 
   @VisibleForTesting

@@ -173,7 +173,7 @@ public class LogsearchFileAuthenticationProviderTest {
   
   @Test
   public void testAuthenticationNoPassword() {
-    List<GrantedAuthority> grantedAuths = Arrays.<GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_USER"));
+    List<GrantedAuthority> grantedAuths = Arrays.asList(new SimpleGrantedAuthority("ROLE_USER"));
     User user = new User("principal", null, grantedAuths);
     
     expect(mockAuthPropsConfig.isAuthFileEnabled()).andReturn(true);
@@ -215,9 +215,9 @@ public class LogsearchFileAuthenticationProviderTest {
   
   @Test
   public void testAuthenticationSuccessful() {
-    List<GrantedAuthority> grantedAuths = Arrays.<GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_USER"));
+    List<GrantedAuthority> grantedAuths = Arrays.asList(new SimpleGrantedAuthority("ROLE_USER"));
     String encodedPassword = passwordEncoder.encode("credentials");
-    User user = new User("principal", "credentials", grantedAuths);
+    User user = new User("principal", encodedPassword, grantedAuths);
     
     expect(mockAuthPropsConfig.isAuthFileEnabled()).andReturn(true);
     expect(mockUserDetailsService.loadUserByUsername("principal")).andReturn(user);
