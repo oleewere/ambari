@@ -16,11 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.ambari.logfeeder.docker;
+package org.apache.ambari.logfeeder.container.docker;
 
-import org.apache.ambari.logfeeder.ContainerRegistry;
-import org.apache.ambari.logfeeder.docker.command.DockerInspectContainerCommand;
-import org.apache.ambari.logfeeder.docker.command.DockerListContainerCommand;
+import org.apache.ambari.logfeeder.container.ContainerRegistry;
+import org.apache.ambari.logfeeder.container.docker.command.DockerInspectContainerCommand;
+import org.apache.ambari.logfeeder.container.docker.command.DockerListContainerCommand;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
