@@ -43,10 +43,7 @@ public class ResumeLineNumberHelper {
     try {
       LOG.info("Checking existing checkpoint file. " + inputFile.getShortDescription());
 
-      String checkPointFileName = inputFile.getBase64FileKey() + inputFile.getCheckPointExtension();
-      File checkPointFolder = inputFile.getInputManager().getCheckPointFolderFile();
-      checkPointFile = new File(checkPointFolder, checkPointFileName);
-      inputFile.getCheckPointFiles().put(inputFile.getBase64FileKey(), checkPointFile);
+      checkPointFile = FileCheckInHelper.attachCheckpointFileToInput(inputFile);
       Map<String, Object> jsonCheckPoint = null;
       if (!checkPointFile.exists()) {
         LOG.info("Checkpoint file for log file " + inputFile.getFilePath() + " doesn't exist, starting to read it from the beginning");
@@ -74,12 +71,10 @@ public class ResumeLineNumberHelper {
       }
       if (jsonCheckPoint == null) {
         // This seems to be first time, so creating the initial checkPoint object
-        jsonCheckPoint = new HashMap<String, Object>();
-        jsonCheckPoint.put("file_path", inputFile.getFilePath());
-        jsonCheckPoint.put("file_key", inputFile.getBase64FileKey());
+        FileCheckInHelper.createNewCheckpointObject(inputFile);
       }
 
-      inputFile.getJsonCheckPoints().put(inputFile.getBase64FileKey(), jsonCheckPoint);
+      FileCheckInHelper.attachCheckpointToInput(inputFile, jsonCheckPoint);
 
     } catch (Throwable t) {
       LOG.error("Error while configuring checkpoint file. Will reset file. checkPointFile=" + checkPointFile, t);
